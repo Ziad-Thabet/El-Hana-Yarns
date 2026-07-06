@@ -1,0 +1,83 @@
+# =========================================
+# El-Hana Yarns — .gitignore
+# =========================================
+
+# ---- Dependencies ----
+node_modules/
+.pnp
+.pnp.js
+
+# ---- Build outputs ----
+dist/
+dist-ssr/
+build/
+out/
+release/
+
+# ---- Electron packaging artifacts ----
+*.exe
+*.dmg
+*.AppImage
+*.blockmap
+*.node
+
+# ---- Local / client databases (NEVER commit real data) ----
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+
+# ---- Real user data directory ----
+userdata/
+userData/
+
+# ---- Environment & secrets ----
+.env
+.env.local
+.env.development
+.env.production
+.env.*.local
+
+# ---- Logs & caches ----
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.eslintcache
+.cache/
+*.tsbuildinfo
+coverage/
+
+# ---- OS junk ----
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- Editor ----
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# ---- Vite temp config (timestamped) ----
+vite.config.ts.timestamp-*
+
+# =========================================
+# EXCEPTIONS — things we DO want tracked
+# even though similar patterns are ignored above
+# =========================================
+!assets/seed/demo.db
+# Personal working notes — not for the repo
+PROGRESS.md
+online-orders-design.md
+project-structure.md
+
+# Personal working notes — not for the repo
+PROGRESS.md
+online-orders-design.md
+project-structure.md
