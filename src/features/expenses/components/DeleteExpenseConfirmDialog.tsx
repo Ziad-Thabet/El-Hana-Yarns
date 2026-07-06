@@ -30,6 +30,7 @@ export function DeleteExpenseConfirmDialog({
       await deleteExpense.mutateAsync(expenseId);
       onClose();
     } catch {
+      // deletion failed - error already surfaced via mutation state/toast
     } finally {
       setDeleting(false);
     }
