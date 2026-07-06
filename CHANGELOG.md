@@ -88,3 +88,4 @@ are added per pull request / release.
 - Added WAL mode, bcrypt authentication, in-memory session management
 - Added IPC role-based access enforcement
 - Added dark/light theme system
+
