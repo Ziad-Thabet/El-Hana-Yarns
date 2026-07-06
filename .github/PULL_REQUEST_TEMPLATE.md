@@ -20,7 +20,6 @@ Closes #
 - [ ] `npm run build` succeeds
 - [ ] No hardcoded Arabic/English strings added outside `src/lib/i18n/`
 - [ ] Tailwind classes use logical (`ms-*`/`me-*`) not physical (`ml-*`/`mr-*`) forms
-- [ ] No direct multi-table DB writes outside `withTransaction()`
 - [ ] `CHANGELOG.md` updated under `[Unreleased]`
 - [ ] `git status` checked against `.gitignore` — no `.db`, `.env`, or `userdata/` files staged
 
