@@ -10,7 +10,8 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)](#)
 [![Vite](https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=white)](#)
 [![SQLite](https://img.shields.io/badge/better--sqlite3-003B57?logo=sqlite&logoColor=white)](#)
-[![License](https://img.shields.io/badge/license-Proprietary-lightgrey)](#)
+[![License](https://img.shields.io/badge/license-Proprietary-lightgrey)](LICENSE)
+[![CI](https://github.com/Ziad-Thabet/El-Hana-Yarns/actions/workflows/ci.yml/badge.svg)](https://github.com/Ziad-Thabet/El-Hana-Yarns/actions/workflows/ci.yml)
 
 </div>
 
@@ -22,11 +23,13 @@
 
 ## 📸 Preview
 
-| Sales Terminal           | Reports Dashboard        | Debt Ledger              |
-| ------------------------ | ------------------------ | ------------------------ |
-| _screenshot placeholder_ | _screenshot placeholder_ | _screenshot placeholder_ |
+| Login                                | Sales Terminal                                         | Reports Dashboard                                            |
+| ------------------------------------ | ------------------------------------------------------ | ------------------------------------------------------------ |
+| ![Login](docs/screenshots/login.png) | ![Sales Terminal](docs/screenshots/sales-terminal.png) | ![Reports Dashboard](docs/screenshots/reports-dashboard.png) |
 
-> Add real screenshots under `docs/screenshots/` and swap the placeholders above.
+| Debt Ledger                                      | Online Orders                                        | Product Management                                   |
+| ------------------------------------------------ | ---------------------------------------------------- | ---------------------------------------------------- |
+| ![Debt Ledger](docs/screenshots/debt-ledger.png) | ![Online Orders](docs/screenshots/online-orders.png) | ![Product Management](docs/screenshots/products.png) |
 
 ---
 
@@ -73,7 +76,7 @@
 ## ✅ Prerequisites
 
 - **OS:** Windows 10/11 (x64) — primary deployment target
-- **Node.js:** LTS (18.x or 20.x recommended)
+- **Node.js:** 22.x (matches CI — see .github/workflows/ci.yml)
 - **npm:** bundled with Node.js
 - **Visual Studio Build Tools** (Desktop development with C++ workload) — required to compile the native `better-sqlite3` module
 - **Python 3.x** — required by `node-gyp` during native module builds
@@ -83,8 +86,8 @@
 ## 🚀 Local Development
 
 ```bash
-git clone https://github.com/Ziad-Thabet/el-hana-yarns.git
-cd el-hana-yarns
+git clone https://github.com/Ziad-Thabet/El-Hana-Yarns.git
+cd El-Hana-Yarns
 
 npm install
 
@@ -172,3 +175,12 @@ loaded from inside a packed ASAR archive at runtime, so they're unpacked alongsi
 
 Proprietary — built for a specific retail client. Not licensed for redistribution
 unless otherwise agreed.
+
+---
+
+## 📚 Additional Documentation
+
+- [CHANGELOG](CHANGELOG.md) — development history and version notes
+- [CONTRIBUTING](CONTRIBUTING.md) — coding standards, branching, PR checklist
+- [SECURITY](SECURITY.md) — vulnerability reporting
+- [CODE OF CONDUCT](CODE_OF_CONDUCT.md)
