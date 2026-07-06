@@ -50,7 +50,7 @@
 
 - 🔖 **Barcode-driven sales terminal** — fast checkout flow with cart, quantity, and payment-split editing
 - 👥 **Multi-role authentication** — admin / staff roles with per-session access control
-- 🌐 **Localized Arabic RTL interface engine** — single source-of-truth translation dictionaries, full RTL layout support
+- 🌐 **Bilingual Arabic/English interface** — single source-of-truth translation dictionaries with automatic RTL/LTR layout switching
 - 📴 **Offline-first reliability** — local SQLite database, no internet dependency for day-to-day operation
 - 💳 **Credit & debt ledger reporting** — customer debt tracking, partial payments, collection history
 - 📊 **Expense & financial dashboards** — shift summaries, gross profit/margin reporting, growth badges
