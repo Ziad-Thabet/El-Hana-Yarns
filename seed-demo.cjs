@@ -257,30 +257,34 @@ function seed() {
     console.log(`✔ Products: ${products.length} منتج`);
 
     // ── Customers ─────────────────────────────────
+    // NOTE: names/phones/addresses below are intentionally generic
+    // placeholders (not real people or real locations), so this data is
+    // safe to use for portfolio screenshots without any risk of resembling
+    // a real customer of the shop.
     const customers = [
       {
         id: id("cust"),
-        name: "أم أحمد",
-        phone: "01001234567",
-        address: "المنصورة",
+        name: "عميل تجريبي 1",
+        phone: "01000000001",
+        address: "مدينة تجريبية 1",
       },
       {
         id: id("cust"),
-        name: "سمر محمود",
-        phone: "01112345678",
-        address: "القاهرة",
+        name: "عميل تجريبي 2",
+        phone: "01000000002",
+        address: "مدينة تجريبية 2",
       },
       {
         id: id("cust"),
-        name: "نادية حسين",
-        phone: "01223456789",
-        address: "الإسكندرية",
+        name: "عميل تجريبي 3",
+        phone: "01000000003",
+        address: "مدينة تجريبية 3",
       },
       {
         id: id("cust"),
-        name: "منى عبدالله",
-        phone: "01301234567",
-        address: "طنطا",
+        name: "عميل تجريبي 4",
+        phone: "01000000004",
+        address: "مدينة تجريبية 4",
       },
     ];
     const insertCust = db.prepare(
@@ -552,7 +556,7 @@ function seed() {
     ).run(
       pinv1Id,
       "PI-DEMO-001",
-      "مصنع الخيوط المصري",
+      "مورد تجريبي 1",
       fmt(lastWeek),
       "09:00 ص",
       2500,
@@ -592,7 +596,7 @@ function seed() {
     ).run(
       pinv2Id,
       "PI-DEMO-002",
-      "توريدات الحياكة",
+      "مورد تجريبي 2",
       fmt(yesterday),
       "11:00 ص",
       1800,
@@ -880,14 +884,15 @@ function seed() {
     console.log("✔ Alerts: 2");
 
     // ── Drivers ───────────────────────────────────
+    // NOTE: placeholder names/phones — not real delivery staff.
     const driver1Id = id("driver");
     const driver2Id = id("driver");
     db.prepare(
       "INSERT OR IGNORE INTO drivers (id, name, phone, is_active, created_at, driver_type, pays_next_day) VALUES (?,?,?,?,?,?,?)",
     ).run(
       driver1Id,
-      "كريم السائق",
-      "01511122233",
+      "سائق تجريبي 1",
+      "01000000005",
       1,
       twoMonthsAgo,
       "driver",
@@ -897,8 +902,8 @@ function seed() {
       "INSERT OR IGNORE INTO drivers (id, name, phone, is_active, created_at, driver_type, pays_next_day) VALUES (?,?,?,?,?,?,?)",
     ).run(
       driver2Id,
-      "محمود المندوب",
-      "01611122244",
+      "سائق تجريبي 2",
+      "01000000006",
       1,
       oneMonthAgo,
       "driver",
@@ -907,14 +912,16 @@ function seed() {
     console.log("✔ Drivers: 2");
 
     // ── Online customer addresses / phones ─────────
+    // NOTE: address_text values below are intentionally generic
+    // placeholders — not real street addresses.
     db.prepare(
       "INSERT OR IGNORE INTO online_customers_addresses (id, customer_id, label, region, address_text, is_default, created_at) VALUES (?,?,?,?,?,?,?)",
     ).run(
       id("addr"),
       customers[0].id,
       "المنزل",
-      "المنصورة",
-      "شارع الجمهورية، بجوار صيدلية النور",
+      "مدينة تجريبية 1",
+      "عنوان تجريبي 1",
       1,
       today.toISOString(),
     );
@@ -924,8 +931,8 @@ function seed() {
       id("addr"),
       customers[1].id,
       "الشغل",
-      "القاهرة",
-      "مدينة نصر، شارع مكرم عبيد",
+      "مدينة تجريبية 2",
+      "عنوان تجريبي 2",
       1,
       today.toISOString(),
     );
@@ -935,8 +942,8 @@ function seed() {
       id("addr"),
       customers[3].id,
       "المنزل",
-      "طنطا",
-      "شارع سعيد، عمارة 12",
+      "مدينة تجريبية 4",
+      "عنوان تجريبي 3",
       1,
       today.toISOString(),
     );
@@ -1002,7 +1009,7 @@ function seed() {
       customers[3].name,
       customers[3].phone,
       null,
-      "شارع سعيد، عمارة 12",
+      "عنوان تجريبي 3",
       "المنزل",
       ORDER_SOURCE.WHATSAPP,
       ORDER_STATUS.NEW,
@@ -1052,7 +1059,7 @@ function seed() {
       customers[0].name,
       customers[0].phone,
       null,
-      "شارع الجمهورية، بجوار صيدلية النور",
+      "عنوان تجريبي 1",
       "المنزل",
       ORDER_SOURCE.FACEBOOK,
       ORDER_STATUS.PREPARING,
@@ -1111,7 +1118,7 @@ function seed() {
       customers[1].name,
       customers[1].phone,
       null,
-      "مدينة نصر، شارع مكرم عبيد",
+      "عنوان تجريبي 2",
       "الشغل",
       ORDER_SOURCE.PHONE,
       ORDER_STATUS.READY,
@@ -1230,7 +1237,7 @@ function seed() {
       customers[0].name,
       customers[0].phone,
       null,
-      "شارع الجمهورية، بجوار صيدلية النور",
+      "عنوان تجريبي 1",
       "المنزل",
       ORDER_SOURCE.INSTAGRAM,
       ORDER_STATUS.DISPATCHED,
@@ -1306,7 +1313,7 @@ function seed() {
       customers[2].name,
       customers[2].phone,
       null,
-      "الإسكندرية",
+      "مدينة تجريبية 3",
       null,
       ORDER_SOURCE.OTHER,
       ORDER_STATUS.CANCELLED,
@@ -1391,7 +1398,7 @@ function seed() {
       customers[1].name,
       customers[1].phone,
       null,
-      "مدينة نصر، شارع مكرم عبيد",
+      "عنوان تجريبي 2",
       "الشغل",
       ORDER_SOURCE.WHATSAPP,
       ORDER_STATUS.NOT_RECEIVED,
@@ -1501,7 +1508,7 @@ function seed() {
       customers[2].name,
       customers[2].phone,
       null,
-      "الإسكندرية",
+      "مدينة تجريبية 3",
       null,
       ORDER_SOURCE.PHONE,
       ORDER_STATUS.PREPARING,
