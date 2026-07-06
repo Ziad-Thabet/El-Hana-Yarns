@@ -41,7 +41,9 @@ function saveCartToStorage(cart: CartItem[]) {
     } else {
       localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
     }
-  } catch {}
+  } catch {
+    // localStorage unavailable (e.g. private browsing) - safe to ignore
+  }
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {

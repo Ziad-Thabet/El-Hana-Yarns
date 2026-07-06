@@ -10,7 +10,7 @@ export default tseslint.config(
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],
     languageOptions: {
-      ecmaVersion: latest,
+      ecmaVersion: 'latest',
       globals: globals.browser,
     },
     plugins: {
