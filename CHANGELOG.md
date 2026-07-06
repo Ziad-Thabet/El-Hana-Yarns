@@ -11,6 +11,7 @@ are added per pull request / release.
 ## [Unreleased]
 
 ### In Progress
+
 - Full i18n and RTL/LTR bilingual switching (VS Code-style professional
   mirroring of Arabic ⇄ English), including:
   - Converting physical Tailwind classes to logical equivalents (`ms-*`/`me-*`
@@ -24,6 +25,7 @@ are added per pull request / release.
 ## Development History (pre-repository)
 
 ### Financial Accuracy Overhaul
+
 - Added explicit `source` and `shift_id` columns to `payment_records` for
   accurate shift-attributed cash totals
 - Fixed 9 bugs across 31 files, including a runtime crash in the online
@@ -32,23 +34,27 @@ are added per pull request / release.
 - Rewrote `seed-demo.cjs` to match the corrected data model
 
 ### Code Quality Audit (Modules 1–8)
+
 - Fixed weighted-item data loss when converting POS sales to online orders
 - Fixed debt invoice number uniqueness violation
 - Removed dead IPC infrastructure
 - Tracked all findings in a master open-items table (resolved / pending / deferred)
 
 ### i18n Audit
+
 - Full audit of 35+ component files
 - Enforced that all Arabic strings route through the centralized `ar.ts`
   file, applied via strict SEARCH/REPLACE patches only
 
 ### Financial Reporting Audit
+
 - Fixed double-counted debt repayments in `trueNetProfit`
 - Corrected mislabeled dashboard summary cards
 - Redesigned `DashboardReportView.tsx` into four grouped report sections
 - Resolved phantom `payment_records` rows on fully-on-debt invoices
 
 ### Phase 7 — Online Orders & Delivery Management
+
 - Customer addresses/phones management
 - Invoice-generation-at-dispatch logic
 - Online order creation directly from the POS interface
@@ -63,6 +69,7 @@ are added per pull request / release.
   verification, auto-generation on product save)
 
 ### Phase 4 — File Splitting & Architecture
+
 - Split 7 monolithic components (ReportsSection, EmployeeManagement,
   SalesInvoices, SalesInterface, PurchaseInvoices, CustomerDebts,
   ExpensesSection) into domain-organized files under
@@ -78,14 +85,15 @@ are added per pull request / release.
   `paidAmount` / `remainingAmount`
 
 ### Phase 3 — Renderer Reorganization
+
 - Migrated all feature domains into `src/features/<domain>/`
 - Introduced `src/lib/types.ts` and `src/lib/hooks/index.ts` as re-export
   barrels
 
 ### Foundation
+
 - Migrated from an early `sql.js` implementation to `better-sqlite3`
   (resolving compile issues on Windows/Electron)
 - Added WAL mode, bcrypt authentication, in-memory session management
 - Added IPC role-based access enforcement
 - Added dark/light theme system
-
