@@ -55,9 +55,6 @@ from another feature — go through shared `lib/` utilities or hooks instead.
   of physical (`ml-*`, `mr-*`, `pl-*`, `pr-*`) so layout mirrors correctly
   in RTL. This is an active migration — if you touch a component that still
   uses physical classes, convert it as part of your change.
-- **Database writes that touch more than one table** must go through the
-  `withTransaction()` helper (`db/helpers/transaction.cjs`) — no bare
-  multi-statement writes outside a transaction.
 - **IPC channels** must be registered in `ipc-channels.cjs` with an explicit
   role permission — don't add ad-hoc `ipcMain.handle` calls elsewhere.
 - **Friday is always a shop day off** — never included in shift/salary
@@ -89,7 +86,6 @@ Scope = the feature domain or area touched (`sales`, `db`, `i18n`, `reports`, et
 - [ ] `npm run lint` passes with no new warnings
 - [ ] `npm run build` succeeds
 - [ ] No hardcoded Arabic/English strings added outside `lib/i18n/`
-- [ ] No direct multi-table writes outside `withTransaction()`
 - [ ] CHANGELOG.md updated under `[Unreleased]`
 - [ ] No `.db`, `.env`, or `userdata/` files included (check `git status`
       against `.gitignore` before pushing)

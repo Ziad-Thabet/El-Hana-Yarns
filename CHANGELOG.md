@@ -76,8 +76,6 @@ are added per pull request / release.
   `src/features/<domain>/components/`
 - Introduced `eslint-plugin-boundaries` to enforce import-direction rules
   between feature domains
-- Added a `withTransaction()` helper (`db/helpers/transaction.cjs`) for
-  atomic multi-statement database operations
 - Introduced `ipc-channels.cjs` as the single source of truth for IPC
   channel permissions
 - Fixed a critical bug in `mapSaleInvoice()` that silently discarded debt
