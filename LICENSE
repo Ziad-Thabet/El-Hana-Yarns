@@ -1,0 +1,42 @@
+Proprietary License — Portfolio Display Only
+
+Copyright (c) 2026 Ziad Thabet. All Rights Reserved.
+
+This repository contains software ("El-Hana Yarns") developed by Ziad Thabet
+as a commissioned deliverable for a client. The client owns the deployed
+application, its data, and all business logic specific to their operation.
+This source code is published publicly by the author for the sole purpose
+of demonstrating engineering work as part of a professional portfolio.
+
+1. Permitted Use
+   Anyone may VIEW, READ, and STUDY the source code in this repository for
+   evaluative, educational, or reference purposes (e.g. a prospective client
+   or employer reviewing code quality).
+
+2. Prohibited Use
+   Unless you have received prior written permission from both the author
+   and the software's commissioning client, you may NOT:
+     a. Copy, fork, clone, or redistribute this code, in whole or in part,
+        for use in another product or service (commercial or non-commercial);
+     b. Deploy, host, or operate this software or any derivative of it;
+     c. Use any client-identifying data, business logic, branding, or
+        naming conventions found in this repository;
+     d. Claim authorship of this work.
+
+3. No Warranty
+   THIS SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL
+   THE AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING
+   FROM THE SOFTWARE OR ITS USE.
+
+4. Contact
+   For licensing inquiries, contributions, or permission requests, open an
+   issue on this repository or contact the author directly via GitHub:
+   https://github.com/Ziad-Thabet
+
+This is not a standard open-source license (MIT/Apache/GPL/etc.). It exists
+specifically to let this project be shown publicly as a portfolio piece
+while protecting client confidentiality and preventing unauthorized reuse.
+This text is provided for convenience and does not constitute legal advice;
+consult a lawyer for anything beyond portfolio display.
