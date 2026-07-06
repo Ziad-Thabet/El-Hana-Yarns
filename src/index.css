@@ -1,0 +1,251 @@
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap");
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    font-family:
+      "IBM Plex Sans Arabic", "Cairo", ui-sans-serif, system-ui, sans-serif;
+    min-height: 100%;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  :root,
+  html.light-theme {
+    --background: 60 14% 97%;
+    --foreground: 0 0% 9%;
+    --card: 60 20% 99%;
+    --card-foreground: 0 0% 9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 9%;
+    --primary: 221 83% 48%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 60 10% 94%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 60 8% 94%;
+    --muted-foreground: 0 0% 40%;
+    --accent: 33 53% 64%;
+    --accent-foreground: 0 0% 12%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 60 10% 90%;
+    --input: 60 10% 90%;
+    --ring: 221 83% 48%;
+    --radius: 0.875rem;
+    --radius-md: 0.75rem;
+    --radius-lg: 1rem;
+    --radius-xl: 1.25rem;
+    --shadow-card:
+      0 1px 2px rgba(23, 23, 23, 0.04), 0 4px 16px rgba(23, 23, 23, 0.06);
+    --shadow-elevated: 0 8px 30px rgba(23, 23, 23, 0.08);
+    --shadow-sidebar: 0 12px 40px rgba(23, 23, 23, 0.1);
+    --shadow-glow:
+      0 0 0 1px hsl(221 83% 48% / 0.12), 0 4px 20px hsl(221 83% 48% / 0.15);
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 0 0% 9%;
+    --sidebar-primary: 221 83% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 60 10% 94%;
+    --sidebar-accent-foreground: 0 0% 9%;
+    --sidebar-border: 60 10% 90%;
+    --sidebar-ring: 221 83% 48%;
+    color: hsl(var(--foreground));
+    background-color: hsl(var(--background));
+  }
+  html.dark-theme {
+    --background: 216 28% 7%;
+    --foreground: 220 14% 96%;
+    --card: 216 24% 15%;
+    --card-foreground: 220 14% 96%;
+    --popover: 216 21% 11%;
+    --popover-foreground: 220 14% 96%;
+    --primary: 221 100% 65%;
+    --primary-foreground: 216 28% 7%;
+    --secondary: 216 20% 14%;
+    --secondary-foreground: 220 14% 96%;
+    --muted: 216 20% 14%;
+    --muted-foreground: 0 0% 64%;
+    --accent: 36 62% 70%;
+    --accent-foreground: 216 28% 7%;
+    --destructive: 0 62% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 100% / 0.08;
+    --input: 0 0% 100% / 0.08;
+    --ring: 221 100% 65%;
+    --radius: 0.875rem;
+    --radius-md: 0.75rem;
+    --radius-lg: 1rem;
+    --radius-xl: 1.25rem;
+    --shadow-card:
+      0 1px 0 rgba(255, 255, 255, 0.04), 0 8px 24px rgba(0, 0, 0, 0.35);
+    --shadow-elevated: 0 16px 48px rgba(0, 0, 0, 0.45);
+    --shadow-sidebar: 0 12px 40px rgba(0, 0, 0, 0.5);
+    --shadow-glow:
+      0 0 0 1px hsl(221 100% 65% / 0.2), 0 0 24px hsl(221 100% 65% / 0.12);
+    --sidebar-background: 216 21% 11%;
+    --sidebar-foreground: 220 14% 96%;
+    --sidebar-primary: 221 100% 65%;
+    --sidebar-primary-foreground: 216 28% 7%;
+    --sidebar-accent: 216 24% 15%;
+    --sidebar-accent-foreground: 220 14% 96%;
+    --sidebar-border: 0 0% 100% / 0.08;
+    --sidebar-ring: 221 100% 65%;
+    color: hsl(var(--foreground));
+    background-color: hsl(var(--background));
+  }
+  * {
+    @apply border-border box-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    min-height: 100vh;
+    line-height: 1.55;
+  }
+  html.light-theme body {
+    background-image:
+      radial-gradient(
+        ellipse 80% 50% at 100% 0%,
+        hsl(221 83% 48% / 0.04),
+        transparent
+      ),
+      radial-gradient(
+        ellipse 60% 40% at 0% 100%,
+        hsl(33 53% 64% / 0.05),
+        transparent
+      );
+  }
+  html.dark-theme body {
+    background-image:
+      radial-gradient(
+        ellipse 70% 45% at 100% 0%,
+        hsl(221 100% 65% / 0.06),
+        transparent
+      ),
+      radial-gradient(
+        ellipse 50% 35% at 0% 100%,
+        hsl(36 62% 70% / 0.04),
+        transparent
+      );
+  }
+  ::selection {
+    background: hsl(var(--primary) / 0.25);
+    color: hsl(var(--foreground));
+  }
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.5);
+  }
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+@layer components {
+  .invoice-preview,
+  .invoice-preview * {
+    color: hsl(0 0% 9%) !important;
+    background-color: transparent;
+  }
+  .invoice-preview table thead tr th {
+    color: hsl(0 0% 100%) !important;
+    background-color: hsl(221 83% 35%) !important;
+    text-align: center !important;
+  }
+  .invoice-preview table tbody tr td {
+    color: hsl(0 0% 9%) !important;
+    text-align: center !important;
+  }
+  .invoice-preview table thead tr th:first-child,
+  .invoice-preview table tbody tr td:first-child {
+    text-align: start !important;
+  }
+}
+img[alt].object-cover {
+  object-position: top;
+}
+
+/* ── Title Bar ───────────────────────────── */
+:root,
+html.light-theme {
+  --titlebar-height: 44px;
+  --titlebar-bg: hsl(220 30% 94%);
+  --titlebar-border: hsl(220 20% 84%);
+  --titlebar-text: hsl(220 30% 12%);
+  --titlebar-subtext: hsl(220 15% 45%);
+  --titlebar-btn-hover: hsl(220 20% 0% / 0.08);
+  --titlebar-btn-active: hsl(220 20% 0% / 0.14);
+  --titlebar-close-hover: #c42b1c;
+  --titlebar-close-active: #a82318;
+  --titlebar-separator: hsl(220 20% 0% / 0.12);
+  --titlebar-accent-line: hsl(221 83% 48%);
+  --titlebar-logo-bg: hsl(221 83% 48% / 0.1);
+  --titlebar-logo-shadow: hsl(221 83% 48% / 0.15);
+  --titlebar-logo-stroke: hsl(221 83% 42%);
+}
+html.dark-theme {
+  --titlebar-height: 44px;
+  --titlebar-bg: hsl(222 47% 11%);
+  --titlebar-border: hsl(222 30% 20%);
+  --titlebar-text: hsl(220 20% 94%);
+  --titlebar-subtext: hsl(220 12% 58%);
+  --titlebar-btn-hover: hsl(0 0% 100% / 0.08);
+  --titlebar-btn-active: hsl(0 0% 100% / 0.14);
+  --titlebar-close-hover: #c42b1c;
+  --titlebar-close-active: #a82318;
+  --titlebar-separator: hsl(0 0% 100% / 0.1);
+  --titlebar-accent-line: hsl(221 100% 65%);
+  --titlebar-logo-bg: hsl(221 100% 65% / 0.12);
+  --titlebar-logo-shadow: hsl(221 100% 65% / 0.2);
+  --titlebar-logo-stroke: hsl(221 100% 70%);
+}
+
+.title-btn {
+  width: 46px;
+  height: var(--titlebar-height);
+  border: none;
+  background: transparent;
+  color: var(--titlebar-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease;
+  flex-shrink: 0;
+  opacity: 0.75;
+  border-radius: 0;
+}
+.title-btn:hover {
+  background: var(--titlebar-btn-hover);
+  opacity: 1;
+}
+.title-btn:active {
+  background: var(--titlebar-btn-active);
+}
+.title-btn--close:hover {
+  background: var(--titlebar-close-hover);
+  color: #fff;
+  opacity: 1;
+}
+.title-btn--close:active {
+  background: var(--titlebar-close-active);
+  color: #fff;
+}
