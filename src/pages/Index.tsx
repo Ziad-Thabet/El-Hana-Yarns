@@ -170,7 +170,7 @@ const Index = () => {
       label: strings.app.currentRole,
       value: isAdmin ? USER_ROLE_LABELS.admin : USER_ROLE_LABELS.staff,
     },
-    { label: strings.app.username, value: authSession.username },
+    { label: strings.app.username, value: authSession.displayName },
     {
       label: strings.app.sessionStarted,
       value: (() => {
