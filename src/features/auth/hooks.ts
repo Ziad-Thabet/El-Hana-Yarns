@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { authApi } from "@/lib/api";
 import { QK } from "@/lib/queryKeys";
-import type { AuthSession, LoginCredentials } from "./types";
+import type { AuthSession, LoginCredentials, RegisterData } from "./types";
 
 export function useActiveSession(enabled = true) {
   return useQuery<AuthSession>({
@@ -26,5 +26,25 @@ export function useLogout() {
   return useMutation({
     mutationFn: (sessionId: string) => authApi.logout(sessionId),
     onSuccess: () => qc.invalidateQueries({ queryKey: QK.authSession }),
+  });
+}
+
+export function useHasAnyUsers() {
+  return useQuery<boolean>({
+    queryKey: QK.authHasAnyUsers,
+    queryFn: () => authApi.hasAnyUsers(),
+    staleTime: 0,
+    retry: false,
+  });
+}
+
+export function useRegister() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: RegisterData) => authApi.register(data),
+    onSuccess: (session) => {
+      qc.setQueryData(QK.authSession, session);
+      qc.setQueryData(QK.authHasAnyUsers, true);
+    },
   });
 }

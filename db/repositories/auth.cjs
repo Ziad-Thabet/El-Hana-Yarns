@@ -50,6 +50,50 @@ function createAuthDB(getDb) {
         displayName: user.display_name,
       };
     },
+    hasAnyUsers() {
+      const db = getDb();
+      const count = db.prepare("SELECT COUNT(*) as c FROM users").get();
+      return count.c > 0;
+    },
+    register(username, password, displayName) {
+      const db = getDb();
+      if (this.hasAnyUsers()) {
+        throw new Error("تم إعداد النظام بالفعل");
+      }
+      if (!username || typeof username !== "string") {
+        throw new Error("اسم المستخدم مطلوب");
+      }
+      username = username.trim();
+      if (!isValidUsername(username)) {
+        throw new Error(
+          `اسم المستخدم يجب أن يكون ${USERNAME_MIN_LENGTH}-${USERNAME_MAX_LENGTH} حرف`,
+        );
+      }
+      if (!isValidPassword(password)) {
+        throw new Error(
+          `كلمة المرور يجب أن تكون ${PASSWORD_MIN_LENGTH}-${PASSWORD_MAX_LENGTH} حرف`,
+        );
+      }
+      const passwordHash = bcryptjs.hashSync(password, BCRYPT_SALT_ROUNDS);
+      const userId = generateId("user");
+      const finalDisplayName = (displayName || username).trim() || username;
+      db.prepare(
+        "INSERT INTO users (id, username, password_hash, display_name, role, is_active, created_at) VALUES (?,?,?,?,?,1,?)",
+      ).run(
+        userId,
+        username,
+        passwordHash,
+        finalDisplayName,
+        "admin",
+        new Date().toISOString(),
+      );
+      return {
+        userId,
+        username,
+        role: "admin",
+        displayName: finalDisplayName,
+      };
+    },
     getUsers() {
       const db = getDb();
       return db
