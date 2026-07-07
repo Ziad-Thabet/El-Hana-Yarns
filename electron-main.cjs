@@ -193,6 +193,36 @@ function registerHandlers() {
     };
   });
 
+  handle("auth:hasAnyUsers", () => authDB.hasAnyUsers());
+  handle("auth:register", (data) => {
+    const username = data?.username?.trim?.();
+    const password = data?.password;
+    const displayName = data?.displayName?.trim?.() || username;
+    if (!username || !password) {
+      throw new Error("اسم المستخدم وكلمة المرور مطلوبان");
+    }
+    const todayDate = formatDateYMD(new Date());
+    const user = authDB.register(username, password, displayName);
+    const sessionId = sessionManager.create(
+      user.userId,
+      user.username,
+      user.role,
+      user.displayName,
+    );
+    const activeSession = sessionManager.get(sessionId);
+    const activeShift = shiftsDB.getActive(user.userId, todayDate);
+    return {
+      sessionId,
+      userId: user.userId,
+      username: user.username,
+      role: user.role,
+      displayName: user.displayName,
+      startedAt: activeSession?.startedAt ?? new Date().toISOString(),
+      firstLoginAt: sessionManager.getFirstLoginAt(user.userId),
+      shiftId: activeShift?.id ?? null,
+    };
+  });
+
   ipcMain.handle("auth:logout", async (_, sessionId) => {
     try {
       if (sessionId) sessionManager.destroy(sessionId);

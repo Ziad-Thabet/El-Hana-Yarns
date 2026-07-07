@@ -34,6 +34,17 @@ export const strings = {
     submit: "Login",
     invalidCredentials: "Incorrect username or password.",
     loginError: "An error occurred while logging in",
+    registerTitle: "Account Setup",
+    registerSubtitle: "First launch — create your admin account",
+    displayName: "Display Name",
+    displayNamePlaceholder: "e.g. John Smith",
+    confirmPassword: "Confirm Password",
+    confirmPasswordPlaceholder: "Re-enter password",
+    registerSubmit: "Create Account & Login",
+    registerError: "An error occurred while creating the account",
+    passwordMismatch: "Passwords do not match",
+    usernameMinLengthError: "Username must be at least 3 characters",
+    passwordMinLengthError: "Password must be at least 8 characters",
   },
 
   theme: {

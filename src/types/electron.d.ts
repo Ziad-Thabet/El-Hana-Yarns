@@ -58,6 +58,12 @@ declare global {
           userId: string,
           newPassword: string,
         ) => Promise<ApiResponse>;
+        hasAnyUsers: () => Promise<ApiResponse<boolean>>;
+        register: (data: {
+          username: string;
+          password: string;
+          displayName?: string;
+        }) => Promise<ApiResponse<AuthSession>>;
       };
 
       categories: {

@@ -15,7 +15,12 @@ import { DriversSection } from "@/features/drivers/components/DriversSection";
 import EmployeeManagement from "@/features/employees/components/EmployeeManagement";
 import ExpensesSection from "@/features/expenses/components/ExpensesSection";
 import { LoginForm } from "@/features/auth/components/LoginForm";
-import { useActiveSession, useLogout } from "@/features/auth/hooks";
+import { RegisterForm } from "@/features/auth/components/RegisterForm";
+import {
+  useActiveSession,
+  useHasAnyUsers,
+  useLogout,
+} from "@/features/auth/hooks";
 import type { AuthSession, Shift } from "@/lib/types";
 import { getNavItemsForRole, type NavTabId } from "@/lib/config/navigation";
 import { strings } from "@/lib/i18n/ar";
@@ -38,6 +43,8 @@ const Index = () => {
   });
   const { data: authSession, isLoading: isRestoringSession } =
     useActiveSession();
+  const { data: hasAnyUsers, isLoading: isCheckingFirstRun } =
+    useHasAnyUsers();
   const [activeShift, setActiveShift] = useState<Shift | null>(null);
   const logout = useLogout();
   const isAdmin = authSession?.role === "admin";
@@ -114,7 +121,7 @@ const Index = () => {
       />
     </div>
   );
-  if (isRestoringSession) {
+  if (isRestoringSession || isCheckingFirstRun) {
     return (
       <div className="flex flex-col h-screen overflow-hidden bg-background">
         <TitleBar />
@@ -143,10 +150,17 @@ const Index = () => {
             `,
           }}
         >
-          <LoginForm
-            brandIcon={brandIcon}
-            onSuccess={() => setActiveTab(DEFAULT_TAB)}
-          />
+          {hasAnyUsers === false ? (
+            <RegisterForm
+              brandIcon={brandIcon}
+              onSuccess={() => setActiveTab(DEFAULT_TAB)}
+            />
+          ) : (
+            <LoginForm
+              brandIcon={brandIcon}
+              onSuccess={() => setActiveTab(DEFAULT_TAB)}
+            />
+          )}
         </div>
       </div>
     );
