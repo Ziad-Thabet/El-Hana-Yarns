@@ -6,6 +6,8 @@ const CHANNEL_PERMISSIONS = {
   "auth:getUsers": "admin",
   "auth:changePassword": "admin",
   "auth:getActiveSession": "public",
+  "auth:hasAnyUsers": "public",
+  "auth:register": "public",
   // Categories
   "categories:getAll": "any",
   "categories:create": "admin",

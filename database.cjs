@@ -691,23 +691,7 @@ function seedExpenseCategories() {
 }
 
 function seedDefaultUsers() {
-  const count = db.prepare("SELECT COUNT(*) as c FROM users").get();
-  if (count.c === 0) {
-    // Hash passwords synchronously (bcryptjs supports sync hashing)
-    const adminHash = bcryptjs.hashSync("admin123", 12);
-    const cashierHash = bcryptjs.hashSync("cashier123", 12);
-
-    db.prepare(
-      "INSERT INTO users (id, username, password_hash, display_name, role) VALUES (?,?,?,?,?)",
-    ).run("user-admin-1", "هنا", adminHash, "المدير", "admin");
-    db.prepare(
-      "INSERT INTO users (id, username, password_hash, display_name, role) VALUES (?,?,?,?,?)",
-    ).run("user-staff-1", "cashier", cashierHash, "الكاشير", "staff");
-    console.log("✅ Default users created (password hashed with bcryptjs)");
-  } else {
-    // Migration: Hash existing plain text passwords
-    migratePasswordsToHash();
-  }
+  migratePasswordsToHash();
 }
 
 function migratePasswordsToHash() {

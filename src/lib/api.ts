@@ -50,9 +50,15 @@ export const authApi = {
     call(() => window.api.auth.getSession(sessionId)),
   getActiveSession: () =>
     call<AuthSession>(() => window.api.auth.getActiveSession()),
- getUsers: () => call<User[]>(() => window.api.auth.getUsers()),
+  getUsers: () => call<User[]>(() => window.api.auth.getUsers()),
   changePassword: (userId: string, newPassword: string) =>
     call(() => window.api.auth.changePassword(userId, newPassword)),
+  hasAnyUsers: () => call<boolean>(() => window.api.auth.hasAnyUsers()),
+  register: (data: {
+    username: string;
+    password: string;
+    displayName?: string;
+  }) => call<AuthSession>(() => window.api.auth.register(data)),
 };
 // CATEGORIES
 export const categoriesApi = {

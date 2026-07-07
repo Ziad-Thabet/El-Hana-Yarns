@@ -16,6 +16,12 @@ export interface LoginCredentials {
   password: string;
 }
 
+export interface RegisterData {
+  username: string;
+  password: string;
+  displayName?: string;
+}
+
 export interface User {
   id: string;
   username: string;

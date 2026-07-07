@@ -34,6 +34,17 @@ export const strings = {
     submit: "تسجيل الدخول",
     invalidCredentials: "اسم المستخدم أو كلمة المرور غير صحيحة.",
     loginError: "حدث خطأ في تسجيل الدخول",
+    registerTitle: "إعداد الحساب",
+    registerSubtitle: "أول تشغيل للبرنامج — أنشئ حساب المدير الخاص بك",
+    displayName: "الاسم الظاهر",
+    displayNamePlaceholder: "مثال: أحمد محمد",
+    confirmPassword: "تأكيد كلمة المرور",
+    confirmPasswordPlaceholder: "أعد كتابة كلمة المرور",
+    registerSubmit: "إنشاء الحساب والدخول",
+    registerError: "حدث خطأ أثناء إنشاء الحساب",
+    passwordMismatch: "كلمتا المرور غير متطابقتين",
+    usernameMinLengthError: "اسم المستخدم يجب أن يكون 3 أحرف على الأقل",
+    passwordMinLengthError: "كلمة المرور يجب أن تكون 8 أحرف على الأقل",
   },
 
   theme: {
