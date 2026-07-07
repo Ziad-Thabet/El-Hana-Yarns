@@ -35,6 +35,7 @@ export const QK = {
   netSummary: (from?: string, to?: string) =>
     ["expenses", "net-summary", from, to] as const,
   authSession: ["auth", "session"] as const,
+  authHasAnyUsers: ["auth", "has-any-users"] as const,
   onlineOrders: (filters?: { status?: string; from?: string; to?: string }) =>
     ["online-orders", filters?.status, filters?.from, filters?.to] as const,
   onlineOrder: (id: string) => ["online-orders", "detail", id] as const,

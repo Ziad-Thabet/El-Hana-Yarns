@@ -1,7 +1,11 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
 let currentSessionId = null;
-const SESSIONLESS_CHANNELS = new Set(["auth:login"]);
+const SESSIONLESS_CHANNELS = new Set([
+  "auth:login",
+  "auth:register",
+  "auth:hasAnyUsers",
+]);
 
 const secureInvoke = (channel, data) => {
   if (
@@ -43,6 +47,19 @@ contextBridge.exposeInMainWorld("api", {
       return secureInvoke("auth:getSession", sessionId);
     },
     getActiveSession: () => secureInvoke("auth:getActiveSession"),
+    hasAnyUsers: () => secureInvoke("auth:hasAnyUsers"),
+    register: (data) => {
+      if (!data || typeof data !== "object") {
+        return Promise.reject(new Error("Invalid registration data"));
+      }
+      if (
+        typeof data.username !== "string" ||
+        typeof data.password !== "string"
+      ) {
+        return Promise.reject(new Error("Invalid registration format"));
+      }
+      return secureInvoke("auth:register", data);
+    },
     getUsers: () => secureInvoke("auth:getUsers"),
     changePassword: (userId, newPassword) => {
       if (typeof userId !== "string" || typeof newPassword !== "string") {
