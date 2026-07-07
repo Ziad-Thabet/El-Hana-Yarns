@@ -2,7 +2,7 @@
 
 # 🧶 El-Hana Yarns POS
 
-### الهناء للخيوط — Offline-First Point of Sale & Inventory Management
+### Offline-First Point of Sale & Inventory Management
 
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11%20x64-0078D6?logo=windows&logoColor=white)](#)
 [![Electron](https://img.shields.io/badge/Electron-2B2E3A?logo=electron&logoColor=9FEAF9)](#)
