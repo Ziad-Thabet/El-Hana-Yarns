@@ -4,7 +4,7 @@ export const strings = {
     loginTitle: "Login",
     logout: "Logout",
     welcome: "Welcome",
-    loginAt: "Logged in",
+    loginAt: "Login Time",
     sessionStarted: "Session Started",
     currentRole: "Current Role",
     username: "Username",
