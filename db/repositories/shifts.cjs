@@ -63,6 +63,37 @@ function createShiftsDB(getDb) {
       .get(shiftId);
     return row?.cnt ?? 0;
   }
+  /**
+   * The single place a shift is closed.
+   *
+   * The same UPDATE previously existed three times — here in `end()`, in
+   * `autoCloseStale()`, and again in employees.setActive() when deactivating a
+   * user with an open shift. Three writers of the same financial totals is how
+   * they drift apart, so every path now funnels through this one.
+   */
+  function closeShift(db, shiftId, endedAt) {
+    const totals = calcShiftTotals(shiftId);
+    const count = calcShiftInvoiceCount(shiftId);
+    db.prepare(
+      `UPDATE shifts SET
+         status='closed',
+         ended_at=?,
+         total_cash=?,
+         total_vodafone=?,
+         total_instapay=?,
+         total_invoices=?
+       WHERE id=?`,
+    ).run(
+      endedAt,
+      totals.cash,
+      totals.vodafone_cash,
+      totals.instapay,
+      count,
+      shiftId,
+    );
+    return mapShift(db.prepare("SELECT * FROM shifts WHERE id=?").get(shiftId));
+  }
+
   const shiftsDB = {
     create(userId, date, startedAt) {
       const db = getDb();
@@ -130,16 +161,6 @@ function createShiftsDB(getDb) {
       });
       const allStale = [...stale, ...sameDayStale];
       if (allStale.length === 0) return;
-      const closeStmt = db.prepare(
-        `UPDATE shifts SET
-           status='closed',
-           ended_at=?,
-           total_cash=?,
-           total_vodafone=?,
-           total_instapay=?,
-           total_invoices=?
-         WHERE id=?`,
-      );
       for (const shift of allStale) {
         const lastInv = db
           .prepare(
@@ -149,16 +170,7 @@ function createShiftsDB(getDb) {
         const endedAt = lastInv
           ? `${lastInv.date}T${lastInv.time}`
           : shift.started_at;
-        const totals = calcShiftTotals(shift.id);
-        const count = calcShiftInvoiceCount(shift.id);
-        closeStmt.run(
-          endedAt,
-          totals.cash,
-          totals.vodafone_cash,
-          totals.instapay,
-          count,
-          shift.id,
-        );
+        closeShift(db, shift.id, endedAt);
         console.log(
           `✅ Auto-closed shift ${shift.id} (user: ${shift.user_id}, role: ${shift.role ?? "?"}, date: ${shift.date})`,
         );
@@ -170,28 +182,19 @@ function createShiftsDB(getDb) {
         .prepare("SELECT * FROM shifts WHERE id=? AND status='open'")
         .get(shiftId);
       if (!shift) throw new Error("shift_not_found_or_already_closed");
-      const totals = calcShiftTotals(shiftId);
-      const count = calcShiftInvoiceCount(shiftId);
-      db.prepare(
-        `UPDATE shifts SET
-           status='closed',
-           ended_at=?,
-           total_cash=?,
-           total_vodafone=?,
-           total_instapay=?,
-           total_invoices=?
-         WHERE id=?`,
-      ).run(
-        endedAt,
-        totals.cash,
-        totals.vodafone_cash,
-        totals.instapay,
-        count,
-        shiftId,
-      );
-      return mapShift(
-        db.prepare("SELECT * FROM shifts WHERE id=?").get(shiftId),
-      );
+      return closeShift(db, shiftId, endedAt);
+    },
+    /**
+     * Closes an open shift without requiring it to be the caller's own —
+     * used when deactivating a user who still has one open.
+     */
+    closeIfOpen(shiftId, endedAt) {
+      const db = getDb();
+      const shift = db
+        .prepare("SELECT id FROM shifts WHERE id=? AND status='open'")
+        .get(shiftId);
+      if (!shift) return null;
+      return closeShift(db, shiftId, endedAt);
     },
     getInvoices(shiftId) {
       const db = getDb();
