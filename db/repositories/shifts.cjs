@@ -18,7 +18,10 @@ function mapShift(row) {
     status: row.status,
   };
 }
-function createShiftsDB(getDb) {
+const STALE_SHIFT_HOURS = 10;
+function createShiftsDB(getDb, settingsDB = null) {
+  const staleHours = () =>
+    settingsDB?.getNumber("shift.staleHours") ?? STALE_SHIFT_HOURS;
   function getOpenShift(userId, date) {
     const db = getDb();
     return (
@@ -140,7 +143,9 @@ function createShiftsDB(getDb) {
               "SELECT s.*, u.role FROM shifts s LEFT JOIN users u ON s.user_id=u.id WHERE s.date < ? AND s.status='open'",
             )
             .all(currentDate);
-      const tenHoursAgo = new Date(now.getTime() - 10 * 60 * 60 * 1000);
+      const staleCutoff = new Date(
+        now.getTime() - staleHours() * 60 * 60 * 1000,
+      );
       const sameDayCandidates = db
         .prepare(
           "SELECT s.*, u.role FROM shifts s LEFT JOIN users u ON s.user_id=u.id WHERE s.date = ? AND s.status = 'open'" +
@@ -155,9 +160,9 @@ function createShiftsDB(getDb) {
           )
           .get(shift.id);
         if (!lastInv) {
-          return new Date(shift.started_at) < tenHoursAgo;
+          return new Date(shift.started_at) < staleCutoff;
         }
-        return new Date(`${lastInv.date}T${lastInv.time}`) < tenHoursAgo;
+        return new Date(`${lastInv.date}T${lastInv.time}`) < staleCutoff;
       });
       const allStale = [...stale, ...sameDayStale];
       if (allStale.length === 0) return;

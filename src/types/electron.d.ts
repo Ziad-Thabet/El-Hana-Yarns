@@ -41,6 +41,9 @@ import type {
   ReturnLineInput,
   SaleReturn,
   SaleReturnResult,
+  SettingEntry,
+  SettingValue,
+  ClientSettings,
 } from "@/lib/types";
 export {};
 interface ApiResponse<T = unknown> {
@@ -320,6 +323,17 @@ declare global {
           invoiceId: string,
           reason?: string,
         ) => Promise<ApiResponse<SaleReturnResult>>;
+      };
+
+      settings: {
+        getClient: () => Promise<ApiResponse<ClientSettings>>;
+        getAll: () => Promise<ApiResponse<SettingEntry[]>>;
+        update: (
+          values: Record<string, SettingValue>,
+        ) => Promise<ApiResponse<{ key: string; value: SettingValue }[]>>;
+        reset: (
+          key: string,
+        ) => Promise<ApiResponse<{ key: string; value: SettingValue }>>;
       };
 
       backup: {

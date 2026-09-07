@@ -1,8 +1,17 @@
 const { generateId } = require("../helpers/ids.cjs");
 const { formatDateYMD } = require("../../shared/dateRules.cjs");
+// Fallbacks used only when no settings repository is supplied.
 const OVERDUE_INVOICE_DAYS = 7;
 const STALE_SHIFT_HOURS = 10;
-function createAlertsDB(getDb, shiftsDB) {
+const OUT_OF_STOCK_THRESHOLD = 0;
+function createAlertsDB(getDb, shiftsDB, settingsDB = null) {
+  const overdueDays = () =>
+    settingsDB?.getNumber("alerts.overdueInvoiceDays") ?? OVERDUE_INVOICE_DAYS;
+  const staleHours = () =>
+    settingsDB?.getNumber("shift.staleHours") ?? STALE_SHIFT_HOURS;
+  const outOfStockAt = () =>
+    settingsDB?.getNumber("inventory.outOfStockThreshold") ??
+    OUT_OF_STOCK_THRESHOLD;
   return {
     getAll() {
       const db = getDb();
@@ -44,8 +53,8 @@ function createAlertsDB(getDb, shiftsDB) {
       const db = getDb();
       const now = new Date();
       const today = formatDateYMD(now);
-      const sevenDaysAgo = formatDateYMD(
-        new Date(now - OVERDUE_INVOICE_DAYS * 24 * 60 * 60 * 1000),
+      const overdueCutoff = formatDateYMD(
+        new Date(now - overdueDays() * 24 * 60 * 60 * 1000),
       );
       // Raise an alert only when the same (type, ref_id) is not already sitting
       // unread. Once the user reads it, a still-unresolved condition surfaces
@@ -76,7 +85,7 @@ function createAlertsDB(getDb, shiftsDB) {
           `SELECT id, invoice_number, supplier FROM purchase_invoices
            WHERE status IN ('unpaid','partial') AND date <= ?`,
         )
-        .all(sevenDaysAgo);
+        .all(overdueCutoff);
       for (const inv of overdueInvoices) {
         insertAlert(
           generateId("alrt"),
@@ -108,9 +117,9 @@ function createAlertsDB(getDb, shiftsDB) {
       const lowStock = db
         .prepare(
           `SELECT id, name, stock FROM products
-           WHERE stock = 0`,
+           WHERE stock <= ?`,
         )
-        .all();
+        .all(outOfStockAt());
       for (const p of lowStock) {
         insertAlert(
           generateId("alrt"),
@@ -121,7 +130,8 @@ function createAlertsDB(getDb, shiftsDB) {
           now.toISOString(),
         );
       }
-      const tenHoursAgo = new Date(now - STALE_SHIFT_HOURS * 60 * 60 * 1000);
+      const staleHoursValue = staleHours();
+      const staleCutoff = new Date(now - staleHoursValue * 60 * 60 * 1000);
       const openStaffShifts = db
         .prepare(
           `SELECT s.*, u.display_name
@@ -139,12 +149,12 @@ function createAlertsDB(getDb, shiftsDB) {
         const refTime = lastInv
           ? new Date(`${lastInv.date}T${lastInv.time}`)
           : new Date(shift.started_at);
-        if (refTime < tenHoursAgo) {
+        if (refTime < staleCutoff) {
           insertAlert(
             generateId("alrt"),
             "shift_open",
             shift.id,
-            `شيفت مفتوح منذ أكثر من 10 ساعات — ${shift.display_name}`,
+            `شيفت مفتوح منذ أكثر من ${staleHoursValue} ساعات — ${shift.display_name}`,
             null,
             now.toISOString(),
           );

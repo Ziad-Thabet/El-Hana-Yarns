@@ -15,7 +15,17 @@ function withVoidedFilter(clause, alias = "s") {
   const voidedCond = `${alias}.voided = 0`;
   return clause ? `${clause} AND ${voidedCond}` : voidedCond;
 }
-function createReportsDB(getDb, productsDB, debtsDB, getEmployeesDB) {
+const LOW_STOCK_THRESHOLD = 10;
+function createReportsDB(
+  getDb,
+  productsDB,
+  debtsDB,
+  getEmployeesDB,
+  settingsDB = null,
+) {
+  const lowStockAt = () =>
+    settingsDB?.getNumber("inventory.lowStockThreshold") ??
+    LOW_STOCK_THRESHOLD;
   function computePercentChange(current, previous) {
     const currentValue = safeNumber(current);
     const previousValue = safeNumber(previous);
@@ -545,7 +555,8 @@ function createReportsDB(getDb, productsDB, debtsDB, getEmployeesDB) {
   }
   function generateInventoryReport() {
     const products = productsDB.getAll();
-    const lowStock = products.filter((p) => p.stock < 10);
+    const lowStockLimit = lowStockAt();
+    const lowStock = products.filter((p) => p.stock < lowStockLimit);
     const outOfStock = products.filter((p) => p.stock <= 0);
     const purchaseCostMap = getPurchaseCostMap();
     const inventoryValueRetail = products.reduce(
@@ -999,10 +1010,10 @@ function createReportsDB(getDb, productsDB, debtsDB, getEmployeesDB) {
       .prepare(
         `SELECT COUNT(*) as productCount,
                 COUNT(CASE WHEN stock <= 0 THEN 1 END) as outOfStock,
-                COUNT(CASE WHEN stock > 0 AND stock < 10 THEN 1 END) as lowStock
+                COUNT(CASE WHEN stock > 0 AND stock < ? THEN 1 END) as lowStock
          FROM products`,
       )
-      .get();
+      .get(lowStockAt());
     const comparison = (() => {
       if (!dateFilter.from || !dateFilter.to) return null;
       const previous = getPreviousPeriod(dateFilter.from, dateFilter.to);

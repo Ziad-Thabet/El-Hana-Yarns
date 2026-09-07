@@ -13,9 +13,9 @@ function computeEAN13CheckDigit(twelveDigits) {
   return (10 - (sum % 10)) % 10;
 }
 
-function generateEAN13Candidate() {
-  let body = BARCODE_INTERNAL_PREFIX;
-  for (let i = 0; i < 10; i++) {
+function generateEAN13Candidate(prefix = BARCODE_INTERNAL_PREFIX) {
+  let body = prefix;
+  while (body.length < 12) {
     body += Math.floor(Math.random() * 10).toString();
   }
   const checkDigit = computeEAN13CheckDigit(body);
@@ -37,7 +37,7 @@ function mapProduct(row) {
     pricePerKg: row.price_per_kg,
   };
 }
-function createProductsDB(getDb) {
+function createProductsDB(getDb, settingsDB = null) {
   const productsDB = {
     getAll() {
       return getDb()
@@ -61,7 +61,10 @@ function createProductsDB(getDb) {
         !!db.prepare("SELECT 1 FROM products WHERE barcode=?").get(code);
       const MAX_ATTEMPTS = 30;
       for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-        const candidate = generateEAN13Candidate();
+        const candidate = generateEAN13Candidate(
+          settingsDB?.getString("barcode.internalPrefix") ??
+            BARCODE_INTERNAL_PREFIX,
+        );
         if (!exists(candidate)) return candidate;
       }
       throw new Error("تعذر توليد باركود فريد بعد عدة محاولات، حاول مرة أخرى");

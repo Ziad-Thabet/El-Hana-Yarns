@@ -11,6 +11,7 @@ import {
   Truck,
   Contact,
   Database,
+  SlidersHorizontal,
 } from "lucide-react";
 import { strings } from "@/lib/i18n/ar";
 export type NavTabId =
@@ -25,7 +26,8 @@ export type NavTabId =
   | "reports"
   | "employees"
   | "expenses"
-  | "backups";
+  | "backups"
+  | "settings";
 export interface NavItem {
   id: NavTabId;
   label: string;
@@ -79,8 +81,23 @@ function buildNavItems(): NavItem[] {
       icon: Database,
       adminOnly: true,
     },
+    {
+      id: "settings",
+      label: strings.nav.settings,
+      icon: SlidersHorizontal,
+      adminOnly: true,
+    },
   ];
 }
 export function getNavItemsForRole(isAdmin: boolean): NavItem[] {
   return buildNavItems().filter((item) => !item.adminOnly || isAdmin);
+}
+
+/**
+ * True when a tab is admin-only. Callers should use this rather than keeping
+ * their own list — the guard in Index.tsx drifted out of sync with this config
+ * and let non-admins reach the reports tab via a persisted localStorage value.
+ */
+export function isAdminOnlyTab(id: NavTabId): boolean {
+  return buildNavItems().some((item) => item.id === id && item.adminOnly);
 }

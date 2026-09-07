@@ -40,6 +40,9 @@ import type {
   ReturnLineInput,
   SaleReturn,
   SaleReturnResult,
+  SettingEntry,
+  SettingValue,
+  ClientSettings,
 } from "./types";
 async function call<T>(
   fn: () => Promise<{ success: boolean; data?: T; message?: string }>,
@@ -343,4 +346,19 @@ export const returnsApi = {
     ),
   void: (invoiceId: string, reason?: string) =>
     call<SaleReturnResult>(() => window.api.returns.void(invoiceId, reason)),
+};
+// SETTINGS
+export const settingsApi = {
+  /** The subset every logged-in user may read (thresholds, shop details). */
+  getClient: () =>
+    call<ClientSettings>(() => window.api.settings.getClient()),
+  getAll: () => call<SettingEntry[]>(() => window.api.settings.getAll()),
+  update: (values: Record<string, SettingValue>) =>
+    call<{ key: string; value: SettingValue }[]>(() =>
+      window.api.settings.update(values),
+    ),
+  reset: (key: string) =>
+    call<{ key: string; value: SettingValue }>(() =>
+      window.api.settings.reset(key),
+    ),
 };
