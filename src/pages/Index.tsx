@@ -14,6 +14,7 @@ import { CustomerProfilesSection } from "@/features/customers-debts/components/C
 import { DriversSection } from "@/features/drivers/components/DriversSection";
 import EmployeeManagement from "@/features/employees/components/EmployeeManagement";
 import ExpensesSection from "@/features/expenses/components/ExpensesSection";
+import { BackupsSection } from "@/features/backups/components/BackupsSection";
 import { LoginForm } from "@/features/auth/components/LoginForm";
 import { RegisterForm } from "@/features/auth/components/RegisterForm";
 import {
@@ -77,7 +78,8 @@ const Index = () => {
       !isAdmin &&
       (activeTab === "invoices" ||
         activeTab === "employees" ||
-        activeTab === "expenses")
+        activeTab === "expenses" ||
+        activeTab === "backups")
     )
       setActiveTab("sales");
   }, [activeTab, isAdmin, isRestoringSession]);
@@ -219,6 +221,8 @@ const Index = () => {
         return isAdmin ? <EmployeeManagement /> : null;
       case "expenses":
         return isAdmin ? <ExpensesSection /> : null;
+      case "backups":
+        return isAdmin ? <BackupsSection /> : null;
       default:
         return null;
     }

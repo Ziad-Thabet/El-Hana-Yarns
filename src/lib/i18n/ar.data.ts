@@ -24,6 +24,7 @@ export const strings = {
     reports: "التقارير",
     employees: "الموظفون",
     expenses: "المصروفات",
+    backups: "النسخ الاحتياطي",
   },
 
   auth: {
@@ -526,6 +527,37 @@ export const strings = {
     phoneAdded: "تم إضافة رقم الهاتف بنجاح ✅",
     phoneUpdated: "تم تحديث رقم الهاتف بنجاح ✅",
     phoneDeleted: "تم حذف رقم الهاتف",
+  },
+
+  backups: {
+    title: "النسخ الاحتياطي",
+    subtitle:
+      "نسخة كاملة من قاعدة البيانات. بتتاخد تلقائياً عند تشغيل البرنامج وكل ٤ ساعات، وتقدر تاخدها يدوياً في أي وقت.",
+    createNow: "خد نسخة دلوقتي",
+    creating: "بيتم أخذ النسخة…",
+    created: "تم أخذ النسخة الاحتياطية",
+    createFailed: "فشل أخذ النسخة الاحتياطية",
+    openFolder: "افتح المجلد",
+    folderLabel: "مكان النسخ",
+    empty: "لا توجد نسخ احتياطية بعد",
+    columnDate: "التاريخ",
+    columnReason: "السبب",
+    columnSize: "الحجم",
+    columnActions: "إجراءات",
+    restore: "استرجاع",
+    restoreTitle: "استرجاع نسخة احتياطية",
+    restoreWarning:
+      "هيتم استبدال قاعدة البيانات الحالية بالكامل بمحتوى النسخة دي، وكل البيانات اللي اتسجلت بعدها هتضيع. هيتم حفظ نسخة أمان من الوضع الحالي قبل الاسترجاع، والبرنامج هيقفل ويفتح تاني.",
+    restoreConfirm: "استرجع وأعد التشغيل",
+    restoring: "جاري الاسترجاع…",
+    restored: "تم الاسترجاع — جاري إعادة التشغيل",
+    restoreFailed: "فشل الاسترجاع",
+    safetyBackupNote: "نسخة الأمان: {name}",
+    reasonStartup: "تشغيل",
+    reasonPeriodic: "دوري",
+    reasonManual: "يدوي",
+    reasonPreRestore: "قبل استرجاع",
+    reasonPreMigration: "قبل تحديث",
   },
 
   drivers: {

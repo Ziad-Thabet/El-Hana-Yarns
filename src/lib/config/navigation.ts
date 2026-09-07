@@ -10,6 +10,7 @@ import {
   Wallet,
   Truck,
   Contact,
+  Database,
 } from "lucide-react";
 import { strings } from "@/lib/i18n/ar";
 export type NavTabId =
@@ -23,7 +24,8 @@ export type NavTabId =
   | "drivers"
   | "reports"
   | "employees"
-  | "expenses";
+  | "expenses"
+  | "backups";
 export interface NavItem {
   id: NavTabId;
   label: string;
@@ -69,6 +71,12 @@ function buildNavItems(): NavItem[] {
       id: "reports",
       label: strings.nav.reports,
       icon: BarChart3,
+      adminOnly: true,
+    },
+    {
+      id: "backups",
+      label: strings.nav.backups,
+      icon: Database,
       adminOnly: true,
     },
   ];

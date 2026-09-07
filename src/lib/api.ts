@@ -33,6 +33,9 @@ import type {
   DriverUpdateInput,
   DriverSettlement,
   DriverLedgerFilters,
+  BackupEntry,
+  BackupListResult,
+  BackupRestoreResult,
 } from "./types";
 async function call<T>(
   fn: () => Promise<{ success: boolean; data?: T; message?: string }>,
@@ -311,4 +314,12 @@ export const driversApi = {
       totalPaidBack: number;
       currentBalance: number;
     }>(() => window.api.drivers.getSummary(driverId, from, to)),
+};
+// BACKUPS
+export const backupApi = {
+  list: () => call<BackupListResult>(() => window.api.backup.list()),
+  create: () => call<BackupEntry | null>(() => window.api.backup.create()),
+  reveal: () => call(() => window.api.backup.reveal()),
+  restore: (fileName: string) =>
+    call<BackupRestoreResult>(() => window.api.backup.restore(fileName)),
 };
