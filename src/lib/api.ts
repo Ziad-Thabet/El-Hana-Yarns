@@ -73,8 +73,9 @@ export const categoriesApi = {
 export const productsApi = {
   getAll: () => call<Product[]>(() => window.api.products.getAll()),
   getById: (id: string) => call<Product>(() => window.api.products.getById(id)),
+  // Resolves to null when no product carries that barcode.
   getByBarcode: (barcode: string) =>
-    call<Product>(() => window.api.products.getByBarcode(barcode)),
+    call<Product | null>(() => window.api.products.getByBarcode(barcode)),
   generateBarcode: () =>
     call<string>(() => window.api.products.generateBarcode()),
   create: (data: Omit<Product, "id">) =>
