@@ -36,6 +36,10 @@ import type {
   BackupEntry,
   BackupListResult,
   BackupRestoreResult,
+  ReturnableLine,
+  ReturnLineInput,
+  SaleReturn,
+  SaleReturnResult,
 } from "./types";
 async function call<T>(
   fn: () => Promise<{ success: boolean; data?: T; message?: string }>,
@@ -322,4 +326,21 @@ export const backupApi = {
   reveal: () => call(() => window.api.backup.reveal()),
   restore: (fileName: string) =>
     call<BackupRestoreResult>(() => window.api.backup.restore(fileName)),
+};
+// RETURNS / VOIDS
+export const returnsApi = {
+  getForInvoice: (invoiceId: string) =>
+    call<SaleReturn[]>(() => window.api.returns.getForInvoice(invoiceId)),
+  getReturnableLines: (invoiceId: string) =>
+    call<ReturnableLine[]>(() =>
+      window.api.returns.getReturnableLines(invoiceId),
+    ),
+  getAll: (from?: string, to?: string) =>
+    call<SaleReturn[]>(() => window.api.returns.getAll(from, to)),
+  create: (invoiceId: string, lines: ReturnLineInput[], reason?: string) =>
+    call<SaleReturnResult>(() =>
+      window.api.returns.create(invoiceId, lines, reason),
+    ),
+  void: (invoiceId: string, reason?: string) =>
+    call<SaleReturnResult>(() => window.api.returns.void(invoiceId, reason)),
 };

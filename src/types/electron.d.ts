@@ -37,6 +37,10 @@ import type {
   DriverSettlement,
   DriverLedgerFilters,
   BackupEntry,
+  ReturnableLine,
+  ReturnLineInput,
+  SaleReturn,
+  SaleReturnResult,
 } from "@/lib/types";
 export {};
 interface ApiResponse<T = unknown> {
@@ -294,6 +298,28 @@ declare global {
           from: string,
           to: string,
         ) => Promise<ApiResponse<NetSummary>>;
+      };
+
+      returns: {
+        getForInvoice: (
+          invoiceId: string,
+        ) => Promise<ApiResponse<SaleReturn[]>>;
+        getReturnableLines: (
+          invoiceId: string,
+        ) => Promise<ApiResponse<ReturnableLine[]>>;
+        getAll: (
+          from?: string,
+          to?: string,
+        ) => Promise<ApiResponse<SaleReturn[]>>;
+        create: (
+          invoiceId: string,
+          lines: ReturnLineInput[],
+          reason?: string,
+        ) => Promise<ApiResponse<SaleReturnResult>>;
+        void: (
+          invoiceId: string,
+          reason?: string,
+        ) => Promise<ApiResponse<SaleReturnResult>>;
       };
 
       backup: {

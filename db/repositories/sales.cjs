@@ -17,6 +17,7 @@ function mapSaleInvoice(db, inv, items, payments = []) {
     total: inv.total,
     cashier: inv.cashier,
     shiftId: inv.shift_id ?? null,
+    returnStatus: inv.return_status ?? "none",
     paymentMethod: payments[0]?.method ?? inv.payment_method ?? null,
     paidAmount: debt ? debt.paid_amount : undefined,
     remainingAmount: debt ? debt.remaining_amount : undefined,

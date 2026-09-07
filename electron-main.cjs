@@ -143,6 +143,7 @@ function registerHandlers() {
     alertsDB,
     driversDB,
     onlineOrdersDB,
+    returnsDB,
   } = db;
   function getTodayDateYMD() {
     return formatDateYMD(new Date());
@@ -434,6 +435,30 @@ function registerHandlers() {
   handle("expenses:getNetSummary", ({ from, to }) =>
     expensesDB.getNetSummary(from, to),
   );
+  // ── RETURNS / VOIDS ───────────────────────
+  handle("returns:getForInvoice", (invoiceId) =>
+    returnsDB.getForInvoice(invoiceId),
+  );
+  handle("returns:getReturnableLines", (invoiceId) =>
+    returnsDB.getReturnableLines(invoiceId),
+  );
+  handle("returns:getAll", ({ from, to } = {}) => returnsDB.getAll(from, to));
+  handle("returns:create", ({ invoiceId, lines, reason }, userSession) =>
+    returnsDB.create(invoiceId, {
+      lines,
+      reason,
+      // Taken from the session, never the renderer: this is the audit trail.
+      userId: userSession?.userId,
+      shiftId: resolveActiveShiftId(userSession),
+    }),
+  );
+  handle("returns:void", ({ invoiceId, reason }, userSession) =>
+    returnsDB.voidInvoice(invoiceId, {
+      reason,
+      userId: userSession?.userId,
+      shiftId: resolveActiveShiftId(userSession),
+    }),
+  );
   // ── BACKUPS ───────────────────────────────
   handle("backup:list", () => ({
     directory: db.backups.backupDir,
@@ -597,6 +622,7 @@ if (!gotSingleInstanceLock) {
       alertsDB: dbModule.alertsDB,
       driversDB: dbModule.driversDB,
       onlineOrdersDB: dbModule.onlineOrdersDB,
+      returnsDB: dbModule.returnsDB,
       backups: dbModule.backups,
     };
     dbModule.initDatabase();

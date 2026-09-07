@@ -334,6 +334,63 @@ const MIGRATIONS = [
       );
     },
   },
+  {
+    version: 2,
+    name: "sale-returns",
+    up(db) {
+      // Returns are recorded as their own document rather than by editing the
+      // original invoice: a sale that happened is a fact, and the correction is
+      // a second fact that references it. The refund itself is a negative
+      // payment_records row against the original invoice, so the cash drawer
+      // and every existing "collected revenue" query net out automatically.
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS sale_returns (
+          id             TEXT PRIMARY KEY,
+          return_number  TEXT NOT NULL UNIQUE,
+          invoice_id     TEXT NOT NULL,
+          date           TEXT NOT NULL,
+          time           TEXT NOT NULL,
+          total          REAL NOT NULL,
+          refunded_cash  REAL NOT NULL DEFAULT 0,
+          debt_reduced   REAL NOT NULL DEFAULT 0,
+          is_full        INTEGER NOT NULL DEFAULT 0,
+          reason         TEXT,
+          created_by     TEXT NOT NULL,
+          shift_id       TEXT,
+          created_at     TEXT NOT NULL,
+          FOREIGN KEY (invoice_id) REFERENCES sale_invoices(id) ON DELETE CASCADE,
+          FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE RESTRICT,
+          FOREIGN KEY (shift_id)   REFERENCES shifts(id) ON DELETE SET NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_sale_returns_invoice ON sale_returns(invoice_id);
+        CREATE INDEX IF NOT EXISTS idx_sale_returns_date    ON sale_returns(date);
+        CREATE INDEX IF NOT EXISTS idx_sale_returns_shift   ON sale_returns(shift_id);
+
+        CREATE TABLE IF NOT EXISTS sale_return_items (
+          id              TEXT PRIMARY KEY,
+          return_id       TEXT NOT NULL,
+          invoice_item_id TEXT,
+          product_id      TEXT,
+          name            TEXT NOT NULL,
+          quantity        REAL NOT NULL,
+          line_total      REAL NOT NULL,
+          restocked       INTEGER NOT NULL DEFAULT 1,
+          FOREIGN KEY (return_id)  REFERENCES sale_returns(id) ON DELETE CASCADE,
+          FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE RESTRICT
+        );
+        CREATE INDEX IF NOT EXISTS idx_sale_return_items_return ON sale_return_items(return_id);
+      `);
+      const cols = db.prepare("PRAGMA table_info(sale_invoices)").all();
+      if (!cols.some((c) => c.name === "return_status")) {
+        // 'none' | 'partial' | 'full'. Deliberately not reusing `voided`: the
+        // shift and revenue queries exclude voided invoices, which would hide
+        // the refund payment along with the sale.
+        db.exec(
+          "ALTER TABLE sale_invoices ADD COLUMN return_status TEXT NOT NULL DEFAULT 'none'",
+        );
+      }
+    },
+  },
 ];
 
 function getSchemaVersion(db) {

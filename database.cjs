@@ -26,6 +26,7 @@ const { createReportsDB } = require("./db/repositories/reports.cjs");
 const { createAuthDB } = require("./db/repositories/auth.cjs");
 const { createDriversDB } = require("./db/repositories/drivers.cjs");
 const { createOnlineOrdersDB } = require("./db/repositories/onlineOrders.cjs");
+const { createReturnsDB } = require("./db/repositories/returns.cjs");
 
 const isDev = !app.isPackaged;
 
@@ -932,6 +933,8 @@ const purchaseDB = createPurchaseDB(() => db, productsDB);
 
 const salesDB = createSalesDB(() => db, productsDB);
 
+const returnsDB = createReturnsDB(() => db, productsDB);
+
 const debtsDB = createDebtsDB(() => db);
 const customersDB = createCustomersDB(() => db, debtsDB);
 
@@ -987,4 +990,5 @@ module.exports = {
   alertsDB,
   driversDB,
   onlineOrdersDB,
+  returnsDB,
 };
