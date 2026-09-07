@@ -6,6 +6,7 @@ const app = electron?.app ||
 const bcryptjs = require("bcryptjs");
 const { formatDateYMD } = require("./shared/dateRules.cjs");
 const images = require("./db/helpers/images.cjs");
+const { createBackupManager } = require("./db/backup.cjs");
 const { createCategoriesDB } = require("./db/repositories/categories.cjs");
 const { createProductsDB } = require("./db/repositories/products.cjs");
 const { createPurchaseDB } = require("./db/repositories/purchase.cjs");
@@ -40,6 +41,13 @@ function ensureDirectories() {
 
 let db;
 
+const backups = createBackupManager({
+  getDb: () => db,
+  closeDb: () => closeDatabase(),
+  dbPath: DB_PATH,
+  dataDir: DATA_DIR,
+});
+
 function initDatabase() {
   ensureDirectories();
 
@@ -49,12 +57,27 @@ function initDatabase() {
   db.pragma("journal_mode = WAL");
   db.pragma("foreign_keys = ON");
 
+  // Report corruption before anything writes to the file, and snapshot the
+  // database before migrations touch the schema, so a failed migration is
+  // always recoverable. Neither is allowed to prevent the app from starting.
+  try {
+    backups.integrityCheck();
+    backups.createDaily("startup");
+  } catch (err) {
+    console.error("❌ Startup backup failed:", err.message);
+  }
+
   createTables();
   migrateLegacyDates();
   seedDefaultUsers();
 
   console.log(`✅ Database connected (better-sqlite3): ${DB_PATH}`);
   return db;
+}
+
+function closeDatabase() {
+  if (db && db.open) db.close();
+  db = null;
 }
 
 function createTables() {
@@ -940,6 +963,8 @@ const onlineOrdersDB = createOnlineOrdersDB(
 
 module.exports = {
   initDatabase,
+  closeDatabase,
+  backups,
   categoriesDB,
   productsDB,
   authDB,

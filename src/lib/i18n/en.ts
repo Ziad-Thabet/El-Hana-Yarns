@@ -24,6 +24,7 @@ export const strings = {
     reports: "Reports",
     employees: "Employees",
     expenses: "Expenses",
+    backups: "Backups",
   },
 
   auth: {
@@ -530,6 +531,37 @@ export const strings = {
     phoneAdded: "Phone number added successfully ✅",
     phoneUpdated: "Phone number updated successfully ✅",
     phoneDeleted: "Phone number deleted",
+  },
+
+  backups: {
+    title: "Backups",
+    subtitle:
+      "A full copy of the database. Taken automatically at startup and every 4 hours, and manually whenever you want.",
+    createNow: "Back up now",
+    creating: "Backing up…",
+    created: "Backup created",
+    createFailed: "Backup failed",
+    openFolder: "Open folder",
+    folderLabel: "Backup location",
+    empty: "No backups yet",
+    columnDate: "Date",
+    columnReason: "Reason",
+    columnSize: "Size",
+    columnActions: "Actions",
+    restore: "Restore",
+    restoreTitle: "Restore a backup",
+    restoreWarning:
+      "This replaces the entire current database with the contents of this backup, and anything recorded since will be lost. A safety copy of the current state is saved first, and the app will restart.",
+    restoreConfirm: "Restore and restart",
+    restoring: "Restoring…",
+    restored: "Restored — restarting",
+    restoreFailed: "Restore failed",
+    safetyBackupNote: "Safety backup: {name}",
+    reasonStartup: "Startup",
+    reasonPeriodic: "Scheduled",
+    reasonManual: "Manual",
+    reasonPreRestore: "Pre-restore",
+    reasonPreMigration: "Pre-migration",
   },
 
   drivers: {

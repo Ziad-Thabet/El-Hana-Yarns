@@ -99,6 +99,11 @@ const CHANNEL_PERMISSIONS = {
   "expenses:getAll": "admin",
   "expenses:delete": "admin",
   "expenses:getNetSummary": "admin",
+  // Backups (admin only — these read and replace the whole database)
+  "backup:list": "admin",
+  "backup:create": "admin",
+  "backup:restore": "admin",
+  "backup:reveal": "admin",
   // Alerts
   "alerts:getAll": "admin",
   "alerts:markRead": "admin",

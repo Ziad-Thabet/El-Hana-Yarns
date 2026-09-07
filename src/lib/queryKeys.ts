@@ -41,6 +41,7 @@ export const QK = {
   onlineOrder: (id: string) => ["online-orders", "detail", id] as const,
   customerTrustLevel: (customerId: string) =>
     ["online-orders", "trust-level", customerId] as const,
+  backups: ["backups"] as const,
   drivers: ["drivers"] as const,
   activeDrivers: ["drivers", "active"] as const,
   driverBalance: (driverId: string) =>

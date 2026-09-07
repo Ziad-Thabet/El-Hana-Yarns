@@ -507,6 +507,18 @@ contextBridge.exposeInMainWorld("api", {
     },
   },
 
+  backup: {
+    list: () => secureInvoke("backup:list"),
+    create: () => secureInvoke("backup:create"),
+    reveal: () => secureInvoke("backup:reveal"),
+    restore: (fileName) => {
+      if (typeof fileName !== "string") {
+        return Promise.reject(new Error("Invalid backup file name"));
+      }
+      return secureInvoke("backup:restore", fileName);
+    },
+  },
+
   alerts: {
     getAll: () => secureInvoke("alerts:getAll"),
     markRead: (id) => {

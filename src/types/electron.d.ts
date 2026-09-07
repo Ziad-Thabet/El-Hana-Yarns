@@ -36,6 +36,7 @@ import type {
   DriverUpdateInput,
   DriverSettlement,
   DriverLedgerFilters,
+  BackupEntry,
 } from "@/lib/types";
 export {};
 interface ApiResponse<T = unknown> {
@@ -293,6 +294,21 @@ declare global {
           from: string,
           to: string,
         ) => Promise<ApiResponse<NetSummary>>;
+      };
+
+      backup: {
+        list: () => Promise<
+          ApiResponse<{ directory: string; entries: BackupEntry[] }>
+        >;
+        create: () => Promise<ApiResponse<BackupEntry | null>>;
+        reveal: () => Promise<ApiResponse>;
+        restore: (fileName: string) => Promise<
+          ApiResponse<{
+            restored: string;
+            safetyBackup: string | null;
+            requiresRestart: boolean;
+          }>
+        >;
       };
 
       alerts: {
