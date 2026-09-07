@@ -1,6 +1,7 @@
 import { createContext, useState, useCallback, ReactNode } from "react";
 import { CartItemModel } from "@/lib/domain";
 import type { CartItem, Product } from "@/lib/types";
+import { stockUnitsFor } from "../../shared/stockUnits.mjs";
 export interface AddToCartResult {
   ok: boolean;
   available?: number;
@@ -17,7 +18,7 @@ export const CartContext = createContext<CartContextValue | null>(null);
 function getInCartAmount(cart: CartItem[], productId: string): number {
   return cart.reduce((sum, i) => {
     if (i.productId !== productId) return sum;
-    return sum + (i.isWeighted ? (i.measureAmount ?? 0) : i.quantity);
+    return sum + stockUnitsFor(i);
   }, 0);
 }
 

@@ -130,19 +130,8 @@ function createPurchaseDB(getDb, productsDB) {
           const itemTotal =
             item.itemTotal ?? item.purchasePrice * item.quantity;
           const unitPrice = item.quantity > 0 ? itemTotal / item.quantity : 0;
-          db.prepare(
-            "INSERT INTO purchase_invoice_items (id, invoice_id, product_name, barcode, quantity, unit, purchase_price, item_total, category) VALUES (?,?,?,?,?,?,?,?,?)",
-          ).run(
-            generateId("pitem"),
-            id,
-            item.productName,
-            item.barcode ?? null,
-            item.quantity,
-            item.unit ?? "piece",
-            unitPrice,
-            itemTotal,
-            item.category ?? null,
-          );
+          // Resolve the product first so the link can be persisted with the
+          // row; `delete()` relies on it to reverse exactly this stock.
           let existing = null;
           if (item.barcode) {
             existing = db
@@ -154,6 +143,20 @@ function createPurchaseDB(getDb, productsDB) {
               .prepare("SELECT id FROM products WHERE name=?")
               .get(item.productName);
           }
+          db.prepare(
+            "INSERT INTO purchase_invoice_items (id, invoice_id, product_name, barcode, quantity, unit, purchase_price, item_total, category, product_id) VALUES (?,?,?,?,?,?,?,?,?,?)",
+          ).run(
+            generateId("pitem"),
+            id,
+            item.productName,
+            item.barcode ?? null,
+            item.quantity,
+            item.unit ?? "piece",
+            unitPrice,
+            itemTotal,
+            item.category ?? null,
+            existing?.id ?? null,
+          );
           if (existing) productsDB.addStock(existing.id, item.quantity);
         }
         if (data.paidAmount > 0) {
@@ -206,9 +209,70 @@ function createPurchaseDB(getDb, productsDB) {
       payTx();
       return this.getById(invoiceId);
     },
+    /**
+     * Deleting a purchase invoice must undo everything saving it did: the stock
+     * it added, its line items, its payment records, any due date, and the
+     * receipt images on disk. Without this the stock stays inflated forever and
+     * the orphaned items keep skewing cost-of-goods reporting.
+     */
     delete(id) {
-      getDb().prepare("DELETE FROM purchase_invoices WHERE id=?").run(id);
-      return { success: true };
+      const db = getDb();
+      const invoice = db
+        .prepare("SELECT id, receipt_image FROM purchase_invoices WHERE id=?")
+        .get(id);
+      if (!invoice) return { success: true, reversedItems: 0 };
+
+      const items = db
+        .prepare(
+          "SELECT product_id, product_name, quantity FROM purchase_invoice_items WHERE invoice_id=? AND product_id IS NOT NULL",
+        )
+        .all(id);
+      const paymentImages = db
+        .prepare(
+          "SELECT receipt_image FROM payment_records WHERE ref_id=? AND ref_type='purchase' AND receipt_image IS NOT NULL",
+        )
+        .all(id)
+        .map((row) => row.receipt_image);
+
+      // Clamp at zero: if some of the received stock has already been sold,
+      // reversing in full would drive stock negative. The shortfall is logged
+      // rather than silently absorbed.
+      const reverseStock = db.prepare(
+        "UPDATE products SET stock = MAX(0, stock - ?) WHERE id=?",
+      );
+
+      const deleteTx = db.transaction(() => {
+        for (const item of items) {
+          const current = db
+            .prepare("SELECT stock FROM products WHERE id=?")
+            .get(item.product_id);
+          if (!current) continue;
+          if (current.stock < item.quantity) {
+            console.warn(
+              `[Purchase] Reversing "${item.product_name}" by ${item.quantity} but only ${current.stock} in stock — clamped at 0`,
+            );
+          }
+          reverseStock.run(item.quantity, item.product_id);
+        }
+        db.prepare(
+          "DELETE FROM payment_records WHERE ref_id=? AND ref_type='purchase'",
+        ).run(id);
+        db.prepare(
+          "DELETE FROM purchase_invoice_items WHERE invoice_id=?",
+        ).run(id);
+        db.prepare("DELETE FROM invoice_due_dates WHERE invoice_id=?").run(id);
+        db.prepare(
+          "DELETE FROM alerts WHERE ref_id=? AND type IN ('invoice_overdue','invoice_due')",
+        ).run(id);
+        db.prepare("DELETE FROM purchase_invoices WHERE id=?").run(id);
+      });
+      deleteTx();
+
+      // Files are not transactional, so unlink only once the rows are gone.
+      for (const image of [invoice.receipt_image, ...paymentImages]) {
+        if (image) images.deleteImage(image);
+      }
+      return { success: true, reversedItems: items.length };
     },
   };
   return purchaseDB;
