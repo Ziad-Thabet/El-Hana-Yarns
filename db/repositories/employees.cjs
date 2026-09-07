@@ -132,26 +132,14 @@ function createEmployeesDB(getDb, shiftsDB) {
         isActive ? 1 : 0,
         userId,
       );
-      // If deactivated, close their open shift
+      // If deactivated, close their open shift through the shared closer
+      // rather than duplicating the UPDATE.
       if (!isActive) {
-        const today = formatDateYMD(new Date());
         const openShift = db
-          .prepare("SELECT * FROM shifts WHERE user_id=? AND status='open'")
+          .prepare("SELECT id FROM shifts WHERE user_id=? AND status='open'")
           .get(userId);
         if (openShift) {
-          const summary = shiftsDB.getSummary(openShift.id);
-          db.prepare(
-            `UPDATE shifts SET status='closed', ended_at=?,
-             total_cash=?, total_vodafone=?, total_instapay=?, total_invoices=?
-             WHERE id=?`,
-          ).run(
-            new Date().toISOString(),
-            summary.cash,
-            summary.vodafone_cash,
-            summary.instapay,
-            summary.totalInvoices,
-            openShift.id,
-          );
+          shiftsDB.closeIfOpen(openShift.id, new Date().toISOString());
         }
       }
       return { success: true };
