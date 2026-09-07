@@ -81,6 +81,10 @@ function handle(channel, fn) {
     console.warn(`[Security] Channel not in permissions map: ${channel}`);
   }
   ipcMain.handle(channel, async (_, ...args) => {
+    // NOTE: declared here (not inside the `if` below) so that handlers always
+    // receive the authenticated user session. Previously this was block-scoped,
+    // which silently leaked Electron's own `session` module into every handler.
+    let userSession = null;
     try {
       if (permission !== "public") {
         const firstArg = args[0];
@@ -91,26 +95,26 @@ function handle(channel, fn) {
               ? firstArg.sessionId
               : null;
 
-        let session = sessionIdFromRequest
+        userSession = sessionIdFromRequest
           ? sessionManager.get(sessionIdFromRequest)
           : null;
-        if (!session) {
+        if (!userSession) {
           const activeSessions = sessionManager.getAll
             ? sessionManager.getAll()
             : [];
-          session = activeSessions.length > 0 ? activeSessions[0] : null;
+          userSession = activeSessions.length > 0 ? activeSessions[0] : null;
         }
-        if (!session) {
+        if (!userSession) {
           throw new Error("Authentication required");
         }
-        if (permission === "admin" && session.role !== "admin") {
+        if (permission === "admin" && userSession.role !== "admin") {
           console.warn(
-            `[Security] Role violation: user="${session.username}" role="${session.role}" tried channel="${channel}"`,
+            `[Security] Role violation: user="${userSession.username}" role="${userSession.role}" tried channel="${channel}"`,
           );
           throw new Error("صلاحيات المسؤول مطلوبة لهذه العملية");
         }
       }
-      const result = await fn(...args, session ?? null);
+      const result = await fn(...args, userSession);
       return { success: true, data: result };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -141,9 +145,11 @@ function registerHandlers() {
   function getTodayDateYMD() {
     return formatDateYMD(new Date());
   }
-  function resolveActiveShiftId(session) {
-    if (!session?.userId) return null;
-    const shift = shiftsDB.getActive(session.userId, getTodayDateYMD());
+  // Named `userSession` rather than `session` so it cannot be confused with
+  // Electron's own `session` module imported at the top of this file.
+  function resolveActiveShiftId(userSession) {
+    if (!userSession?.userId) return null;
+    const shift = shiftsDB.getActive(userSession.userId, getTodayDateYMD());
     return shift?.id ?? null;
   }
   handle("auth:login", (credentials) => {
