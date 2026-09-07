@@ -139,8 +139,20 @@ function createProductsDB(getDb) {
     },
     delete(id) {
       const p = this.getById(id);
+      // Delete the row first: a product that already appears in sales or
+      // purchase history is protected by a foreign key, and the image must not
+      // be removed for a deletion that is about to be rejected.
+      try {
+        getDb().prepare("DELETE FROM products WHERE id=?").run(id);
+      } catch (err) {
+        if (String(err.message).includes("FOREIGN KEY")) {
+          throw new Error(
+            `لا يمكن حذف "${p?.name ?? "المنتج"}" لأنه مسجّل في فواتير سابقة. يمكنك تصفير الكمية بدلاً من الحذف.`,
+          );
+        }
+        throw err;
+      }
       if (p?.imagePath) images.deleteImage(p.imagePath);
-      getDb().prepare("DELETE FROM products WHERE id=?").run(id);
       return { success: true };
     },
     getForSales() {

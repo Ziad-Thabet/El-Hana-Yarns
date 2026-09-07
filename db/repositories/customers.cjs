@@ -86,7 +86,18 @@ function createCustomersDB(getDb, debtsDB) {
       return this.getById(id);
     },
     delete(id) {
-      getDb().prepare("DELETE FROM customers WHERE id=?").run(id);
+      // Addresses and phones cascade; debts and online orders are protected,
+      // because removing them would rewrite past financial reports.
+      try {
+        getDb().prepare("DELETE FROM customers WHERE id=?").run(id);
+      } catch (err) {
+        if (String(err.message).includes("FOREIGN KEY")) {
+          throw new Error(
+            "لا يمكن حذف العميل لوجود ديون أو طلبات مسجّلة باسمه.",
+          );
+        }
+        throw err;
+      }
       return { success: true };
     },
     getDebts(customerId) {
