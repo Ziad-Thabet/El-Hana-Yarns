@@ -1,11 +1,29 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
+/**
+ * The id of the session this window is authenticated as.
+ *
+ * It lives in preload module scope, which the renderer cannot reach: the page
+ * only ever sees the functions exposed on `window.api`. It is sent to the main
+ * process as a dedicated IPC argument — never merged into the request payload —
+ * so a caller cannot forge one by passing `{ sessionId: ... }` as data.
+ */
 let currentSessionId = null;
-const SESSIONLESS_CHANNELS = new Set([
-  "auth:login",
-  "auth:register",
-  "auth:hasAnyUsers",
-]);
+
+/** Captures the session id from a successful auth response. */
+const adoptSession = (promise) =>
+  promise.then((res) => {
+    if (res?.success && typeof res.data?.sessionId === "string") {
+      currentSessionId = res.data.sessionId;
+    }
+    return res;
+  });
+
+const clearSession = (promise) =>
+  promise.then((res) => {
+    currentSessionId = null;
+    return res;
+  });
 
 const secureInvoke = (channel, data) => {
   if (
@@ -17,7 +35,7 @@ const secureInvoke = (channel, data) => {
     console.error(`[Security] Invalid data type for channel: ${channel}`);
     return Promise.reject(new Error("Invalid request"));
   }
-  return ipcRenderer.invoke(channel, data);
+  return ipcRenderer.invoke(channel, data, { sessionId: currentSessionId });
 };
 
 contextBridge.exposeInMainWorld("api", {
@@ -32,13 +50,13 @@ contextBridge.exposeInMainWorld("api", {
       ) {
         return Promise.reject(new Error("Invalid credentials format"));
       }
-      return secureInvoke("auth:login", credentials);
+      return adoptSession(secureInvoke("auth:login", credentials));
     },
     logout: (sessionId) => {
       if (typeof sessionId !== "string") {
         return Promise.reject(new Error("Invalid session ID"));
       }
-      return secureInvoke("auth:logout", sessionId);
+      return clearSession(secureInvoke("auth:logout", sessionId));
     },
     getSession: (sessionId) => {
       if (typeof sessionId !== "string") {
@@ -46,7 +64,8 @@ contextBridge.exposeInMainWorld("api", {
       }
       return secureInvoke("auth:getSession", sessionId);
     },
-    getActiveSession: () => secureInvoke("auth:getActiveSession"),
+    getActiveSession: () =>
+      adoptSession(secureInvoke("auth:getActiveSession")),
     hasAnyUsers: () => secureInvoke("auth:hasAnyUsers"),
     register: (data) => {
       if (!data || typeof data !== "object") {
@@ -58,7 +77,7 @@ contextBridge.exposeInMainWorld("api", {
       ) {
         return Promise.reject(new Error("Invalid registration format"));
       }
-      return secureInvoke("auth:register", data);
+      return adoptSession(secureInvoke("auth:register", data));
     },
     getUsers: () => secureInvoke("auth:getUsers"),
     changePassword: (userId, newPassword) => {
@@ -663,31 +682,6 @@ contextBridge.exposeInMainWorld("api", {
         return Promise.reject(new Error("Invalid driver ID"));
       return secureInvoke("drivers:getSummary", { driverId, from, to });
     },
-  },
-
-  completeCheckout: (checkoutData) => {
-    if (!checkoutData || typeof checkoutData !== "object") {
-      return Promise.reject(new Error("Invalid checkout data"));
-    }
-    return secureInvoke("complete-checkout", checkoutData);
-  },
-  savePurchaseInvoice: (invoiceData) => {
-    if (!invoiceData || typeof invoiceData !== "object") {
-      return Promise.reject(new Error("Invalid invoice data"));
-    }
-    return secureInvoke("save-purchase-invoice", invoiceData);
-  },
-  updatePurchasePayment: (paymentData) => {
-    if (!paymentData || typeof paymentData !== "object") {
-      return Promise.reject(new Error("Invalid payment data"));
-    }
-    return secureInvoke("update-purchase-payment", paymentData);
-  },
-  generateReport: (reportData) => {
-    if (!reportData || typeof reportData !== "object") {
-      return Promise.reject(new Error("Invalid report data"));
-    }
-    return secureInvoke("generate-report", reportData);
   },
 
   windowControls: {
