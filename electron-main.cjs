@@ -17,6 +17,10 @@ app.commandLine.appendSwitch(
 const sessionManager = require("./session-manager.cjs");
 const rateLimiter = require("./rate-limiter.cjs");
 const { CHANNEL_PERMISSIONS } = require("./ipc-channels.cjs");
+const {
+  AUDIT_DESCRIPTORS,
+  PASSWORD_KEYS,
+} = require("./audit-descriptors.cjs");
 const { formatDateYMD } = require("./shared/dateRules.cjs");
 const { receiptPageSize } = require("./shared/receiptIdentity.cjs");
 if (process.platform === "win32") {
@@ -89,8 +93,61 @@ function createWindow() {
   });
 }
 
+/**
+ * Records an audited operation. Deliberately swallows its own failures: an
+ * audit row is valuable, but never valuable enough to turn a completed sale
+ * into an IPC error.
+ */
+function recordAudit(descriptor, channel, payload, result, userSession, status, error) {
+  try {
+    if (!db?.auditDB) return;
+    // Identity comes from the session, never the payload. `auth:login` is the
+    // one exception: it is public, so on success the actor is only knowable
+    // from the handler's own result.
+    let actorUserId = userSession?.userId ?? null;
+    let actorUsername = userSession?.username ?? null;
+    let actorRole = userSession?.role ?? null;
+    if (!actorUserId && descriptor.actorFromResult && result) {
+      actorUserId = result.userId ?? null;
+      actorUsername = result.username ?? null;
+      actorRole = result.role ?? null;
+    }
+    const safeCall = (fn, fallback = null) => {
+      try {
+        return fn();
+      } catch {
+        return fallback;
+      }
+    };
+    // Repositories attach `__audit` to their return value when they know
+    // before/after values the wrapper cannot see (old and new price, say).
+    const contributed = result && typeof result === "object" ? result.__audit : null;
+    db.auditDB.write({
+      actorUserId,
+      actorUsername: actorUsername ?? "غير معروف",
+      actorRole,
+      channel,
+      action: descriptor.action,
+      entity: descriptor.entity,
+      entityId: descriptor.entityId
+        ? safeCall(() => descriptor.entityId(payload, result))
+        : null,
+      summary: descriptor.summary
+        ? safeCall(() => descriptor.summary(payload, result))
+        : null,
+      detail: { payload, ...(contributed ? { changes: contributed } : {}) },
+      redact: descriptor.redact ?? PASSWORD_KEYS,
+      status,
+      error: error ?? null,
+    });
+  } catch (err) {
+    console.error("[Audit] recordAudit failed:", err.message);
+  }
+}
+
 function handle(channel, fn) {
   const permission = CHANNEL_PERMISSIONS[channel];
+  const auditDescriptor = AUDIT_DESCRIPTORS[channel] ?? null;
   if (!permission) {
     console.warn(`[Security] Channel not in permissions map: ${channel}`);
   }
@@ -116,15 +173,52 @@ function handle(channel, fn) {
           console.warn(
             `[Security] Role violation: user="${userSession.username}" role="${userSession.role}" tried channel="${channel}"`,
           );
+          // A refused attempt on a privileged channel is exactly the kind of
+          // thing the log exists for.
+          if (auditDescriptor) {
+            recordAudit(
+              auditDescriptor,
+              channel,
+              payload,
+              null,
+              userSession,
+              "denied",
+              "صلاحيات المسؤول مطلوبة لهذه العملية",
+            );
+          }
           throw new Error("صلاحيات المسؤول مطلوبة لهذه العملية");
         }
       }
       const result = await fn(payload, userSession);
+      if (auditDescriptor) {
+        recordAudit(auditDescriptor, channel, payload, result, userSession, "ok");
+      }
+      // `__audit` is a channel between repository and audit writer, not part of
+      // the API surface; strip it before the response crosses the bridge.
+      if (result && typeof result === "object" && "__audit" in result) {
+        delete result.__audit;
+      }
       return { success: true, data: result };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       if (error instanceof Error) console.error("[IPC Stack]", error.stack);
       else console.error("[IPC Error]", message);
+      // A failed attempt is worth recording too — but not the denial we already
+      // logged above, which rethrows the same message.
+      if (
+        auditDescriptor &&
+        message !== "صلاحيات المسؤول مطلوبة لهذه العملية"
+      ) {
+        recordAudit(
+          auditDescriptor,
+          channel,
+          payload,
+          null,
+          userSession,
+          "failed",
+          message,
+        );
+      }
       return { success: false, message };
     }
   });
@@ -176,6 +270,7 @@ function registerHandlers() {
     onlineOrdersDB,
     returnsDB,
     settingsDB,
+    auditDB,
   } = db;
   function getTodayDateYMD() {
     return formatDateYMD(new Date());
@@ -496,6 +591,9 @@ function registerHandlers() {
     restartBackgroundTimers();
     return result;
   });
+  // ── AUDIT ─────────────────────────────────
+  handle("audit:query", (filters) => auditDB.query(filters ?? {}));
+  handle("audit:getFilterOptions", () => auditDB.getFilterOptions());
   // ── BACKUPS ───────────────────────────────
   handle("backup:list", () => ({
     directory: db.backups.backupDir,
@@ -687,6 +785,7 @@ if (!gotSingleInstanceLock) {
       onlineOrdersDB: dbModule.onlineOrdersDB,
       returnsDB: dbModule.returnsDB,
       settingsDB: dbModule.settingsDB,
+      auditDB: dbModule.auditDB,
       applyRuntimeSettings: dbModule.applyRuntimeSettings,
       backups: dbModule.backups,
     };

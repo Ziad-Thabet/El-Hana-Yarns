@@ -95,6 +95,14 @@ function createProductsDB(getDb, settingsDB = null) {
     },
     update(id, data) {
       const old = this.getById(id);
+      // Only this layer can see the previous values; the audit wrapper attaches
+      // whatever is handed back on `__audit`.
+      const changes = {};
+      for (const field of ["name", "price", "stock", "pricePerKg", "category"]) {
+        const before = old?.[field] ?? null;
+        const after = data[field] ?? null;
+        if (before !== after) changes[field] = { from: before, to: after };
+      }
       let imgPath = data.imageUrl ?? null;
       if (data.imageUrl?.startsWith("data:")) {
         if (old?.imagePath) images.deleteImage(old.imagePath);
@@ -115,7 +123,16 @@ function createProductsDB(getDb, settingsDB = null) {
           data.pricePerKg ?? null,
           id,
         );
-      return this.getById(id);
+      const updated = this.getById(id);
+      if (updated && Object.keys(changes).length > 0) {
+        // Non-enumerable so it cannot leak into JSON responses by accident.
+        Object.defineProperty(updated, "__audit", {
+          value: changes,
+          enumerable: false,
+          configurable: true,
+        });
+      }
+      return updated;
     },
     deductStock(id, amount) {
       const db = getDb();

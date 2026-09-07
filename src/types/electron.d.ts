@@ -44,6 +44,9 @@ import type {
   SettingEntry,
   SettingValue,
   ClientSettings,
+  AuditQuery,
+  AuditQueryResult,
+  AuditFilterOptions,
 } from "@/lib/types";
 export {};
 interface ApiResponse<T = unknown> {
@@ -323,6 +326,13 @@ declare global {
           invoiceId: string,
           reason?: string,
         ) => Promise<ApiResponse<SaleReturnResult>>;
+      };
+
+      audit: {
+        query: (
+          filters?: AuditQuery,
+        ) => Promise<ApiResponse<AuditQueryResult>>;
+        getFilterOptions: () => Promise<ApiResponse<AuditFilterOptions>>;
       };
 
       settings: {

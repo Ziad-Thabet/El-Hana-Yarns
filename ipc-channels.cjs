@@ -105,6 +105,9 @@ const CHANNEL_PERMISSIONS = {
   "settings:getAll": "admin",
   "settings:update": "admin",
   "settings:reset": "admin",
+  // Audit trail — read only; the log itself is append-only.
+  "audit:query": "admin",
+  "audit:getFilterOptions": "admin",
   // Backups (admin only — these read and replace the whole database)
   "backup:list": "admin",
   "backup:create": "admin",

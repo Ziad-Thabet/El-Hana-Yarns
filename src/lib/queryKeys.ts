@@ -41,6 +41,8 @@ export const QK = {
   onlineOrder: (id: string) => ["online-orders", "detail", id] as const,
   customerTrustLevel: (customerId: string) =>
     ["online-orders", "trust-level", customerId] as const,
+  audit: (filters?: unknown) => ["audit", filters] as const,
+  auditFilterOptions: ["audit", "filter-options"] as const,
   settings: ["settings"] as const,
   allSettings: ["settings", "all"] as const,
   backups: ["backups"] as const,

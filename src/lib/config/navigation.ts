@@ -12,6 +12,7 @@ import {
   Contact,
   Database,
   SlidersHorizontal,
+  ScrollText,
 } from "lucide-react";
 import { strings } from "@/lib/i18n/ar";
 export type NavTabId =
@@ -27,7 +28,8 @@ export type NavTabId =
   | "employees"
   | "expenses"
   | "backups"
-  | "settings";
+  | "settings"
+  | "audit";
 export interface NavItem {
   id: NavTabId;
   label: string;
@@ -85,6 +87,12 @@ function buildNavItems(): NavItem[] {
       id: "settings",
       label: strings.nav.settings,
       icon: SlidersHorizontal,
+      adminOnly: true,
+    },
+    {
+      id: "audit",
+      label: strings.nav.audit,
+      icon: ScrollText,
       adminOnly: true,
     },
   ];
