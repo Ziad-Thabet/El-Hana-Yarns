@@ -385,6 +385,56 @@ function createTables() {
   migrateOnlineOrderItemsWeightColumns();
   migrateCustomerDebtsInvoiceNumberUnique();
   migrateAlertsDedupe();
+  migratePurchaseItemProductLink();
+}
+
+// Purchase items recorded which product they topped up only implicitly, by
+// re-matching on barcode or name. Deleting an invoice could therefore not
+// reverse the stock it had added. Store the resolved product id at write time
+// and backfill history with the same matching rule `save()` used.
+function migratePurchaseItemProductLink() {
+  try {
+    const cols = db.prepare("PRAGMA table_info(purchase_invoice_items)").all();
+    if (cols.some((c) => c.name === "product_id")) return;
+
+    db.exec("ALTER TABLE purchase_invoice_items ADD COLUMN product_id TEXT");
+    db.exec(
+      "CREATE INDEX IF NOT EXISTS idx_purchase_items_product ON purchase_invoice_items(product_id)",
+    );
+    const backfill = db.transaction(() => {
+      db.prepare(
+        `UPDATE purchase_invoice_items
+            SET product_id = (
+              SELECT p.id FROM products p
+               WHERE p.barcode IS NOT NULL
+                 AND p.barcode <> ''
+                 AND p.barcode = purchase_invoice_items.barcode
+               LIMIT 1
+            )
+          WHERE product_id IS NULL AND barcode IS NOT NULL AND barcode <> ''`,
+      ).run();
+      db.prepare(
+        `UPDATE purchase_invoice_items
+            SET product_id = (
+              SELECT p.id FROM products p
+               WHERE p.name = purchase_invoice_items.product_name
+               LIMIT 1
+            )
+          WHERE product_id IS NULL`,
+      ).run();
+    });
+    backfill();
+    const linked = db
+      .prepare(
+        "SELECT COUNT(*) c FROM purchase_invoice_items WHERE product_id IS NOT NULL",
+      )
+      .get().c;
+    console.log(
+      `✅ Migration: added product_id to purchase_invoice_items (${linked} rows linked)`,
+    );
+  } catch (err) {
+    console.error("❌ migratePurchaseItemProductLink failed:", err.message);
+  }
 }
 
 // The alert engine used INSERT OR IGNORE against a freshly generated random

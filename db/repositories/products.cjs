@@ -1,5 +1,6 @@
 const { generateId } = require("../helpers/ids.cjs");
 const images = require("../helpers/images.cjs");
+const { stockUnitsSql } = require("../../shared/stockUnits.cjs");
 const DEFAULT_PRODUCT_UNIT = "piece";
 const BARCODE_INTERNAL_PREFIX = "20";
 
@@ -150,7 +151,7 @@ function createProductsDB(getDb) {
              p.barcode, p.image_url, p.category, p.unit, p.price_per_kg
            FROM products p
            LEFT JOIN (
-             SELECT oi.product_id, SUM(oi.quantity) as held
+             SELECT oi.product_id, SUM(${stockUnitsSql("oi")}) as held
              FROM online_order_items oi
              JOIN online_orders oo ON oi.order_id = oo.id
              WHERE oo.status IN ('new','preparing','ready')

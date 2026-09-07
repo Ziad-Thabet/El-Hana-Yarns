@@ -14,6 +14,10 @@ const {
 const {
   computePaymentBreakdown,
 } = require("../../shared/onlineOrdersPayment.cjs");
+const {
+  stockUnitsFor,
+  stockUnitsSql,
+} = require("../../shared/stockUnits.cjs");
 
 function resolvePaymentStatus(prepaidAmount, remainingAmount) {
   if (remainingAmount <= 0) return ORDER_PAYMENT_STATUS.PAID;
@@ -24,7 +28,9 @@ function resolvePaymentStatus(prepaidAmount, remainingAmount) {
 function getHeldQuantities(db, excludeOrderId = null) {
   const placeholders = PRE_DISPATCH_STATUSES.map(() => "?").join(",");
   const params = [...PRE_DISPATCH_STATUSES];
-  let query = `SELECT oi.product_id, SUM(oi.quantity) as held
+  // Reserve the real amount, not the row's `quantity` (always 1 for weighted
+  // lines) — see shared/stockUnits.cjs.
+  let query = `SELECT oi.product_id, SUM(${stockUnitsSql("oi")}) as held
        FROM online_order_items oi
        JOIN online_orders oo ON oi.order_id = oo.id
        WHERE oo.status IN (${placeholders})`;
@@ -49,7 +55,7 @@ function validateStockAvailability(db, items, excludeOrderId = null) {
     if (!product) continue;
     const heldQty = held[item.productId] ?? 0;
     const available = product.stock - heldQty;
-    const qty = item.quantity ?? 1;
+    const qty = stockUnitsFor(item);
     if (qty > available) {
       throw new Error(
         `الكمية المطلوبة غير متوفرة لـ "${product.name}" — المتاح: ${Math.max(0, available)}`,
@@ -475,7 +481,7 @@ function createOnlineOrdersDB(
       const dispatchTx = db.transaction(() => {
         for (const item of order.items) {
           if (item.productId) {
-            productsDB.deductStock(item.productId, item.quantity);
+            productsDB.deductStock(item.productId, stockUnitsFor(item));
           }
         }
 
@@ -672,7 +678,7 @@ function createOnlineOrdersDB(
       const notReceivedTx = db.transaction(() => {
         for (const item of order.items) {
           if (item.productId) {
-            productsDB.addStock(item.productId, item.quantity);
+            productsDB.addStock(item.productId, stockUnitsFor(item));
           }
         }
 
