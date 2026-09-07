@@ -29,6 +29,7 @@ const { createOnlineOrdersDB } = require("./db/repositories/onlineOrders.cjs");
 const { createReturnsDB } = require("./db/repositories/returns.cjs");
 const { createSettingsDB } = require("./db/repositories/settings.cjs");
 const { createAuditDB } = require("./db/repositories/audit.cjs");
+const { createRolesDB } = require("./db/repositories/roles.cjs");
 
 const isDev = !app.isPackaged;
 
@@ -955,6 +956,7 @@ function migrateLegacyDates() {
 // cache is lazy, so it does not mind that the table does not exist yet.
 const settingsDB = createSettingsDB(() => db);
 const auditDB = createAuditDB(() => db);
+const rolesDB = createRolesDB(() => db);
 
 const categoriesDB = createCategoriesDB(() => db);
 
@@ -989,7 +991,7 @@ function globalAutoCloseShifts() {
   }
 }
 
-const employeesDB = createEmployeesDB(() => db, shiftsDB);
+const employeesDB = createEmployeesDB(() => db, shiftsDB, rolesDB);
 
 const expensesDB = createExpensesDB(() => db, employeesDB);
 
@@ -1027,5 +1029,6 @@ module.exports = {
   returnsDB,
   settingsDB,
   auditDB,
+  rolesDB,
   applyRuntimeSettings,
 };

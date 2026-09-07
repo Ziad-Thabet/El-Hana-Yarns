@@ -109,6 +109,17 @@ class SessionManager {
   destroy(sessionId) {
     this.sessions.delete(sessionId);
   }
+  /** Ends every session belonging to a user — used when their role changes. */
+  destroyForUser(userId) {
+    let removed = 0;
+    for (const [sessionId, session] of this.sessions.entries()) {
+      if (session.userId === userId) {
+        this.sessions.delete(sessionId);
+        removed++;
+      }
+    }
+    return removed;
+  }
   destroyAll() {
     this.sessions.clear();
   }
