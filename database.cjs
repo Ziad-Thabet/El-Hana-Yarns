@@ -7,6 +7,7 @@ const bcryptjs = require("bcryptjs");
 const { formatDateYMD } = require("./shared/dateRules.cjs");
 const images = require("./db/helpers/images.cjs");
 const { createBackupManager } = require("./db/backup.cjs");
+const { runMigrations, getSchemaVersion } = require("./db/migrations.cjs");
 const { createCategoriesDB } = require("./db/repositories/categories.cjs");
 const { createProductsDB } = require("./db/repositories/products.cjs");
 const { createPurchaseDB } = require("./db/repositories/purchase.cjs");
@@ -70,8 +71,14 @@ function initDatabase() {
   createTables();
   migrateLegacyDates();
   seedDefaultUsers();
+  // Versioned migrations run last, on top of the baseline shape the legacy
+  // idempotent helpers above guarantee. These are allowed to throw: a database
+  // that cannot be migrated must not be served.
+  runMigrations(db);
 
-  console.log(`✅ Database connected (better-sqlite3): ${DB_PATH}`);
+  console.log(
+    `✅ Database connected (better-sqlite3, schema v${getSchemaVersion(db)}): ${DB_PATH}`,
+  );
   return db;
 }
 
