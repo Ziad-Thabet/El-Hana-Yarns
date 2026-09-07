@@ -150,3 +150,11 @@ export type {
   BackupListResult,
   BackupRestoreResult,
 } from "@/features/backups/types";
+
+export type {
+  ReturnableLine,
+  ReturnLineInput,
+  SaleReturn,
+  SaleReturnItem,
+  SaleReturnResult,
+} from "@/features/returns/types";
