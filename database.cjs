@@ -6,6 +6,8 @@ const app = electron?.app ||
 const bcryptjs = require("bcryptjs");
 const { formatDateYMD } = require("./shared/dateRules.cjs");
 const images = require("./db/helpers/images.cjs");
+const { createBackupManager } = require("./db/backup.cjs");
+const { runMigrations, getSchemaVersion } = require("./db/migrations.cjs");
 const { createCategoriesDB } = require("./db/repositories/categories.cjs");
 const { createProductsDB } = require("./db/repositories/products.cjs");
 const { createPurchaseDB } = require("./db/repositories/purchase.cjs");
@@ -24,6 +26,7 @@ const { createReportsDB } = require("./db/repositories/reports.cjs");
 const { createAuthDB } = require("./db/repositories/auth.cjs");
 const { createDriversDB } = require("./db/repositories/drivers.cjs");
 const { createOnlineOrdersDB } = require("./db/repositories/onlineOrders.cjs");
+const { createReturnsDB } = require("./db/repositories/returns.cjs");
 
 const isDev = !app.isPackaged;
 
@@ -40,6 +43,13 @@ function ensureDirectories() {
 
 let db;
 
+const backups = createBackupManager({
+  getDb: () => db,
+  closeDb: () => closeDatabase(),
+  dbPath: DB_PATH,
+  dataDir: DATA_DIR,
+});
+
 function initDatabase() {
   ensureDirectories();
 
@@ -49,12 +59,33 @@ function initDatabase() {
   db.pragma("journal_mode = WAL");
   db.pragma("foreign_keys = ON");
 
+  // Report corruption before anything writes to the file, and snapshot the
+  // database before migrations touch the schema, so a failed migration is
+  // always recoverable. Neither is allowed to prevent the app from starting.
+  try {
+    backups.integrityCheck();
+    backups.createDaily("startup");
+  } catch (err) {
+    console.error("❌ Startup backup failed:", err.message);
+  }
+
   createTables();
   migrateLegacyDates();
   seedDefaultUsers();
+  // Versioned migrations run last, on top of the baseline shape the legacy
+  // idempotent helpers above guarantee. These are allowed to throw: a database
+  // that cannot be migrated must not be served.
+  runMigrations(db);
 
-  console.log(`✅ Database connected (better-sqlite3): ${DB_PATH}`);
+  console.log(
+    `✅ Database connected (better-sqlite3, schema v${getSchemaVersion(db)}): ${DB_PATH}`,
+  );
   return db;
+}
+
+function closeDatabase() {
+  if (db && db.open) db.close();
+  db = null;
 }
 
 function createTables() {
@@ -385,6 +416,56 @@ function createTables() {
   migrateOnlineOrderItemsWeightColumns();
   migrateCustomerDebtsInvoiceNumberUnique();
   migrateAlertsDedupe();
+  migratePurchaseItemProductLink();
+}
+
+// Purchase items recorded which product they topped up only implicitly, by
+// re-matching on barcode or name. Deleting an invoice could therefore not
+// reverse the stock it had added. Store the resolved product id at write time
+// and backfill history with the same matching rule `save()` used.
+function migratePurchaseItemProductLink() {
+  try {
+    const cols = db.prepare("PRAGMA table_info(purchase_invoice_items)").all();
+    if (cols.some((c) => c.name === "product_id")) return;
+
+    db.exec("ALTER TABLE purchase_invoice_items ADD COLUMN product_id TEXT");
+    db.exec(
+      "CREATE INDEX IF NOT EXISTS idx_purchase_items_product ON purchase_invoice_items(product_id)",
+    );
+    const backfill = db.transaction(() => {
+      db.prepare(
+        `UPDATE purchase_invoice_items
+            SET product_id = (
+              SELECT p.id FROM products p
+               WHERE p.barcode IS NOT NULL
+                 AND p.barcode <> ''
+                 AND p.barcode = purchase_invoice_items.barcode
+               LIMIT 1
+            )
+          WHERE product_id IS NULL AND barcode IS NOT NULL AND barcode <> ''`,
+      ).run();
+      db.prepare(
+        `UPDATE purchase_invoice_items
+            SET product_id = (
+              SELECT p.id FROM products p
+               WHERE p.name = purchase_invoice_items.product_name
+               LIMIT 1
+            )
+          WHERE product_id IS NULL`,
+      ).run();
+    });
+    backfill();
+    const linked = db
+      .prepare(
+        "SELECT COUNT(*) c FROM purchase_invoice_items WHERE product_id IS NOT NULL",
+      )
+      .get().c;
+    console.log(
+      `✅ Migration: added product_id to purchase_invoice_items (${linked} rows linked)`,
+    );
+  } catch (err) {
+    console.error("❌ migratePurchaseItemProductLink failed:", err.message);
+  }
 }
 
 // The alert engine used INSERT OR IGNORE against a freshly generated random
@@ -852,6 +933,8 @@ const purchaseDB = createPurchaseDB(() => db, productsDB);
 
 const salesDB = createSalesDB(() => db, productsDB);
 
+const returnsDB = createReturnsDB(() => db, productsDB);
+
 const debtsDB = createDebtsDB(() => db);
 const customersDB = createCustomersDB(() => db, debtsDB);
 
@@ -890,6 +973,8 @@ const onlineOrdersDB = createOnlineOrdersDB(
 
 module.exports = {
   initDatabase,
+  closeDatabase,
+  backups,
   categoriesDB,
   productsDB,
   authDB,
@@ -905,4 +990,5 @@ module.exports = {
   alertsDB,
   driversDB,
   onlineOrdersDB,
+  returnsDB,
 };

@@ -5,6 +5,7 @@ const {
   protocol,
   net,
   session,
+  shell,
 } = require("electron");
 const path = require("path");
 app.commandLine.appendSwitch("disable-features", "AutofillServerCommunication");
@@ -22,6 +23,7 @@ if (process.platform === "win32") {
 let mainWindow;
 const isDev = !app.isPackaged;
 let db;
+const PERIODIC_BACKUP_INTERVAL_MS = 4 * 60 * 60 * 1000;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -141,6 +143,7 @@ function registerHandlers() {
     alertsDB,
     driversDB,
     onlineOrdersDB,
+    returnsDB,
   } = db;
   function getTodayDateYMD() {
     return formatDateYMD(new Date());
@@ -432,6 +435,51 @@ function registerHandlers() {
   handle("expenses:getNetSummary", ({ from, to }) =>
     expensesDB.getNetSummary(from, to),
   );
+  // ── RETURNS / VOIDS ───────────────────────
+  handle("returns:getForInvoice", (invoiceId) =>
+    returnsDB.getForInvoice(invoiceId),
+  );
+  handle("returns:getReturnableLines", (invoiceId) =>
+    returnsDB.getReturnableLines(invoiceId),
+  );
+  handle("returns:getAll", ({ from, to } = {}) => returnsDB.getAll(from, to));
+  handle("returns:create", ({ invoiceId, lines, reason }, userSession) =>
+    returnsDB.create(invoiceId, {
+      lines,
+      reason,
+      // Taken from the session, never the renderer: this is the audit trail.
+      userId: userSession?.userId,
+      shiftId: resolveActiveShiftId(userSession),
+    }),
+  );
+  handle("returns:void", ({ invoiceId, reason }, userSession) =>
+    returnsDB.voidInvoice(invoiceId, {
+      reason,
+      userId: userSession?.userId,
+      shiftId: resolveActiveShiftId(userSession),
+    }),
+  );
+  // ── BACKUPS ───────────────────────────────
+  handle("backup:list", () => ({
+    directory: db.backups.backupDir,
+    entries: db.backups.list(),
+  }));
+  handle("backup:create", () => db.backups.create("manual"));
+  handle("backup:reveal", async () => {
+    await shell.openPath(db.backups.backupDir);
+    return { success: true };
+  });
+  handle("backup:restore", (fileName) => {
+    const result = db.backups.restore(fileName);
+    // The connection is closed and every repository still points at it, so the
+    // only safe next step is a restart. Defer it so this reply reaches the
+    // renderer first.
+    setTimeout(() => {
+      app.relaunch();
+      app.exit(0);
+    }, 500);
+    return result;
+  });
   // ── ALERTS (Feature C) ────────────────────
   handle("alerts:getAll", () => alertsDB.getAll());
   handle("alerts:markRead", (id) => alertsDB.markRead(id));
@@ -574,8 +622,22 @@ if (!gotSingleInstanceLock) {
       alertsDB: dbModule.alertsDB,
       driversDB: dbModule.driversDB,
       onlineOrdersDB: dbModule.onlineOrdersDB,
+      returnsDB: dbModule.returnsDB,
+      backups: dbModule.backups,
     };
     dbModule.initDatabase();
+    // A retail day accumulates cash and stock movements worth more than the
+    // once-per-launch snapshot; take a rolling one while the shop is open.
+    setInterval(
+      () => {
+        try {
+          dbModule.backups.create("periodic");
+        } catch (err) {
+          console.error("[Backup]", err.message);
+        }
+      },
+      PERIODIC_BACKUP_INTERVAL_MS,
+    );
     setInterval(
       () => {
         try {

@@ -507,6 +507,46 @@ contextBridge.exposeInMainWorld("api", {
     },
   },
 
+  returns: {
+    getForInvoice: (invoiceId) => {
+      if (typeof invoiceId !== "string") {
+        return Promise.reject(new Error("Invalid invoice ID"));
+      }
+      return secureInvoke("returns:getForInvoice", invoiceId);
+    },
+    getReturnableLines: (invoiceId) => {
+      if (typeof invoiceId !== "string") {
+        return Promise.reject(new Error("Invalid invoice ID"));
+      }
+      return secureInvoke("returns:getReturnableLines", invoiceId);
+    },
+    getAll: (from, to) => secureInvoke("returns:getAll", { from, to }),
+    create: (invoiceId, lines, reason) => {
+      if (typeof invoiceId !== "string" || !Array.isArray(lines)) {
+        return Promise.reject(new Error("Invalid return data"));
+      }
+      return secureInvoke("returns:create", { invoiceId, lines, reason });
+    },
+    void: (invoiceId, reason) => {
+      if (typeof invoiceId !== "string") {
+        return Promise.reject(new Error("Invalid invoice ID"));
+      }
+      return secureInvoke("returns:void", { invoiceId, reason });
+    },
+  },
+
+  backup: {
+    list: () => secureInvoke("backup:list"),
+    create: () => secureInvoke("backup:create"),
+    reveal: () => secureInvoke("backup:reveal"),
+    restore: (fileName) => {
+      if (typeof fileName !== "string") {
+        return Promise.reject(new Error("Invalid backup file name"));
+      }
+      return secureInvoke("backup:restore", fileName);
+    },
+  },
+
   alerts: {
     getAll: () => secureInvoke("alerts:getAll"),
     markRead: (id) => {

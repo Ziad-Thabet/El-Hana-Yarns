@@ -14,6 +14,8 @@ export interface SaleInvoice {
   paymentHistory?: PaymentRecord[];
   paidAmount?: number;
   remainingAmount?: number;
+  /** 'none' | 'partial' | 'full' — set by the returns flow. */
+  returnStatus?: string | null;
 }
 
 export interface Shift {

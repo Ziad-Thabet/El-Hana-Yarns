@@ -207,6 +207,7 @@ const SalesInvoices = ({
         open={detailOpen}
         onClose={() => setDetailOpen(false)}
         onPrint={openPrint}
+        isAdmin={isAdmin}
       />
       <EndShiftDialog
         open={endShiftOpen}

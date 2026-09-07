@@ -41,6 +41,10 @@ function createShiftsDB(getDb) {
          GROUP BY pr.method`,
       )
       .all(shiftId);
+    // Refunds are stored as negative payment_records against the original
+    // invoice, so they subtract here without any special casing — money leaving
+    // the drawer today is counted against today's shift even when the sale it
+    // reverses belongs to an earlier one.
     const totals = { cash: 0, vodafone_cash: 0, instapay: 0 };
     for (const row of rows) {
       const method = (row.method ?? "").toLowerCase();

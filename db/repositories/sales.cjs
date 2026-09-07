@@ -2,6 +2,7 @@ const { generateId } = require("../helpers/ids.cjs");
 const { nowDateTime, normalizeIsoDate } = require("../helpers/isoDates.cjs");
 const images = require("../helpers/images.cjs");
 const { safeNumber } = require("../helpers/numbers.cjs");
+const { stockUnitsFor } = require("../../shared/stockUnits.cjs");
 function mapSaleInvoice(db, inv, items, payments = []) {
   const debt = db
     .prepare(
@@ -16,6 +17,7 @@ function mapSaleInvoice(db, inv, items, payments = []) {
     total: inv.total,
     cashier: inv.cashier,
     shiftId: inv.shift_id ?? null,
+    returnStatus: inv.return_status ?? "none",
     paymentMethod: payments[0]?.method ?? inv.payment_method ?? null,
     paidAmount: debt ? debt.paid_amount : undefined,
     remainingAmount: debt ? debt.remaining_amount : undefined,
@@ -163,10 +165,7 @@ function createSalesDB(getDb, productsDB) {
             item.lineTotal ?? item.price,
           );
           if (item.productId) {
-            const deduct = item.isWeighted
-              ? (item.weightGrams ?? 0)
-              : (item.quantity ?? 1);
-            productsDB.deductStock(item.productId, deduct);
+            productsDB.deductStock(item.productId, stockUnitsFor(item));
           }
         }
         if (remainingDebt > 0) {

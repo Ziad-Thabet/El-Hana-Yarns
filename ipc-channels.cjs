@@ -99,6 +99,17 @@ const CHANNEL_PERMISSIONS = {
   "expenses:getAll": "admin",
   "expenses:delete": "admin",
   "expenses:getNetSummary": "admin",
+  // Returns / voids (admin only — these move money and stock backwards)
+  "returns:getForInvoice": "admin",
+  "returns:getReturnableLines": "admin",
+  "returns:create": "admin",
+  "returns:void": "admin",
+  "returns:getAll": "admin",
+  // Backups (admin only — these read and replace the whole database)
+  "backup:list": "admin",
+  "backup:create": "admin",
+  "backup:restore": "admin",
+  "backup:reveal": "admin",
   // Alerts
   "alerts:getAll": "admin",
   "alerts:markRead": "admin",

@@ -143,3 +143,18 @@ export type {
   DriverSettlement,
   DriverLedgerFilters,
 } from "@/features/drivers/types";
+
+export type {
+  BackupReason,
+  BackupEntry,
+  BackupListResult,
+  BackupRestoreResult,
+} from "@/features/backups/types";
+
+export type {
+  ReturnableLine,
+  ReturnLineInput,
+  SaleReturn,
+  SaleReturnItem,
+  SaleReturnResult,
+} from "@/features/returns/types";

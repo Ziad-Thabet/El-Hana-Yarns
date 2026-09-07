@@ -15,27 +15,33 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Receipt, Printer } from "lucide-react";
+import { Receipt, Printer, Undo2 } from "lucide-react";
 import { Money, CartItemModel } from "@/lib/domain";
 import { PremiumButton } from "@/components/ui/premium";
 import type { SaleInvoice } from "@/features/sales/types";
 import { PAYMENT_METHOD_LABELS } from "@/lib/constants/payment";
 import { getInvoicePaymentBadgeInfo } from "@/features/sales/invoiceBadgeHelpers";
 import { strings } from "@/lib/i18n/ar";
+import { ReturnDialog } from "@/features/returns/components/ReturnDialog";
 
 export function InvoiceDetailDialog({
   invoice,
   open,
   onClose,
   onPrint,
+  isAdmin = false,
 }: {
   invoice: SaleInvoice | null;
   open: boolean;
   onClose: () => void;
   onPrint: (inv: SaleInvoice) => void;
+  /** Returns and voids move money and stock backwards — admin only. */
+  isAdmin?: boolean;
 }) {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [returnOpen, setReturnOpen] = useState(false);
   if (!invoice) return null;
+  const returnStatus = invoice.returnStatus ?? "none";
   const { methodLabel, isFullyOnDebt } = getInvoicePaymentBadgeInfo(invoice);
   return (
     <>
@@ -81,6 +87,15 @@ export function InvoiceDetailDialog({
                 </span>
                 <Badge variant="secondary">{methodLabel}</Badge>
               </div>
+            )}
+            {returnStatus !== "none" && (
+              <Badge
+                variant={returnStatus === "full" ? "destructive" : "secondary"}
+              >
+                {returnStatus === "full"
+                  ? strings.returns.statusBadgeFull
+                  : strings.returns.statusBadgePartial}
+              </Badge>
             )}
             {isFullyOnDebt && (
               <div className="flex items-center gap-2">
@@ -217,6 +232,15 @@ export function InvoiceDetailDialog({
                 <Printer className="w-4 h-4 me-2" />
                 {strings.salesInvoices.printInvoiceButton}
               </PremiumButton>
+              {isAdmin && returnStatus !== "full" && (
+                <Button
+                  variant="destructive"
+                  onClick={() => setReturnOpen(true)}
+                >
+                  <Undo2 className="w-4 h-4 me-2" />
+                  {strings.returns.openButton}
+                </Button>
+              )}
               <Button variant="outline" onClick={onClose}>
                 {strings.common.close}
               </Button>
@@ -224,6 +248,12 @@ export function InvoiceDetailDialog({
           </div>
         </DialogContent>
       </Dialog>
+      <ReturnDialog
+        invoiceId={invoice.id}
+        invoiceNumber={invoice.invoiceNumber}
+        open={returnOpen}
+        onClose={() => setReturnOpen(false)}
+      />
       <Dialog open={!!previewImage} onOpenChange={() => setPreviewImage(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
