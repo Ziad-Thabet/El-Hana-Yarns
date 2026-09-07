@@ -408,6 +408,48 @@ const MIGRATIONS = [
       `);
     },
   },
+  {
+    version: 4,
+    name: "audit-log",
+    up(db) {
+      // Deliberately no foreign key on actor_user_id: RESTRICT would block ever
+      // deleting a user, and CASCADE would erase the trail of what they did.
+      // The denormalised actor_username is the point — it survives the account.
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS audit_log (
+          id             TEXT PRIMARY KEY,
+          occurred_at    TEXT NOT NULL,
+          date           TEXT NOT NULL,
+          actor_user_id  TEXT,
+          actor_username TEXT NOT NULL,
+          actor_role     TEXT,
+          channel        TEXT NOT NULL,
+          action         TEXT NOT NULL,
+          entity         TEXT NOT NULL,
+          entity_id      TEXT,
+          summary        TEXT,
+          detail         TEXT,
+          status         TEXT NOT NULL DEFAULT 'ok',
+          error          TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_audit_date     ON audit_log(date);
+        CREATE INDEX IF NOT EXISTS idx_audit_actor    ON audit_log(actor_user_id);
+        CREATE INDEX IF NOT EXISTS idx_audit_action   ON audit_log(action);
+        CREATE INDEX IF NOT EXISTS idx_audit_entity   ON audit_log(entity, entity_id);
+        CREATE INDEX IF NOT EXISTS idx_audit_occurred ON audit_log(occurred_at DESC);
+
+        -- Append-only enforced by the database rather than by discipline: an
+        -- audit trail that application code can quietly rewrite is not one.
+        CREATE TRIGGER IF NOT EXISTS audit_log_no_update
+        BEFORE UPDATE ON audit_log
+        BEGIN SELECT RAISE(ABORT, 'audit_log is append-only'); END;
+
+        CREATE TRIGGER IF NOT EXISTS audit_log_no_delete
+        BEFORE DELETE ON audit_log
+        BEGIN SELECT RAISE(ABORT, 'audit_log is append-only'); END;
+      `);
+    },
+  },
 ];
 
 function getSchemaVersion(db) {

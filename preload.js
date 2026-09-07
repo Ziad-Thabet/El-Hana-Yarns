@@ -554,6 +554,11 @@ contextBridge.exposeInMainWorld("api", {
     },
   },
 
+  audit: {
+    query: (filters) => secureInvoke("audit:query", filters ?? {}),
+    getFilterOptions: () => secureInvoke("audit:getFilterOptions"),
+  },
+
   settings: {
     getClient: () => secureInvoke("settings:getClient"),
     getAll: () => secureInvoke("settings:getAll"),

@@ -166,3 +166,11 @@ export type {
   SettingEntry,
   ClientSettings,
 } from "@/features/settings/types";
+
+export type {
+  AuditStatus,
+  AuditEntry,
+  AuditQuery,
+  AuditQueryResult,
+  AuditFilterOptions,
+} from "@/features/audit/types";

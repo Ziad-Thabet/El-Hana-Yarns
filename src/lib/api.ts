@@ -43,6 +43,9 @@ import type {
   SettingEntry,
   SettingValue,
   ClientSettings,
+  AuditQuery,
+  AuditQueryResult,
+  AuditFilterOptions,
 } from "./types";
 async function call<T>(
   fn: () => Promise<{ success: boolean; data?: T; message?: string }>,
@@ -361,4 +364,11 @@ export const settingsApi = {
     call<{ key: string; value: SettingValue }>(() =>
       window.api.settings.reset(key),
     ),
+};
+// AUDIT
+export const auditApi = {
+  query: (filters: AuditQuery = {}) =>
+    call<AuditQueryResult>(() => window.api.audit.query(filters)),
+  getFilterOptions: () =>
+    call<AuditFilterOptions>(() => window.api.audit.getFilterOptions()),
 };

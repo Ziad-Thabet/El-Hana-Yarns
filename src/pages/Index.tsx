@@ -16,6 +16,7 @@ import EmployeeManagement from "@/features/employees/components/EmployeeManageme
 import ExpensesSection from "@/features/expenses/components/ExpensesSection";
 import { BackupsSection } from "@/features/backups/components/BackupsSection";
 import { SettingsSection } from "@/features/settings/components/SettingsSection";
+import { AuditSection } from "@/features/audit/components/AuditSection";
 import { LoginForm } from "@/features/auth/components/LoginForm";
 import { RegisterForm } from "@/features/auth/components/RegisterForm";
 import {
@@ -227,6 +228,8 @@ const Index = () => {
         return isAdmin ? <BackupsSection /> : null;
       case "settings":
         return isAdmin ? <SettingsSection /> : null;
+      case "audit":
+        return isAdmin ? <AuditSection /> : null;
       default:
         return null;
     }

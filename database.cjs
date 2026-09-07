@@ -28,6 +28,7 @@ const { createDriversDB } = require("./db/repositories/drivers.cjs");
 const { createOnlineOrdersDB } = require("./db/repositories/onlineOrders.cjs");
 const { createReturnsDB } = require("./db/repositories/returns.cjs");
 const { createSettingsDB } = require("./db/repositories/settings.cjs");
+const { createAuditDB } = require("./db/repositories/audit.cjs");
 
 const isDev = !app.isPackaged;
 
@@ -953,6 +954,7 @@ function migrateLegacyDates() {
 // Instantiated first: several repositories take it as a dependency. Its
 // cache is lazy, so it does not mind that the table does not exist yet.
 const settingsDB = createSettingsDB(() => db);
+const auditDB = createAuditDB(() => db);
 
 const categoriesDB = createCategoriesDB(() => db);
 
@@ -1024,5 +1026,6 @@ module.exports = {
   onlineOrdersDB,
   returnsDB,
   settingsDB,
+  auditDB,
   applyRuntimeSettings,
 };
