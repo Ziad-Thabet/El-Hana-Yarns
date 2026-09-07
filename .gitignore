@@ -13,6 +13,7 @@ dist-ssr/
 build/
 out/
 release/
+dist_electron/
 
 # ---- Electron packaging artifacts ----
 *.exe

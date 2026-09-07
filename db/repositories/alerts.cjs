@@ -47,10 +47,29 @@ function createAlertsDB(getDb, shiftsDB) {
       const sevenDaysAgo = formatDateYMD(
         new Date(now - OVERDUE_INVOICE_DAYS * 24 * 60 * 60 * 1000),
       );
-      const insertAlert = db.prepare(
-        `INSERT OR IGNORE INTO alerts (id, type, ref_id, message, is_read, due_date, created_at)
-         VALUES (?,?,?,?,0,?,?)`,
+      // Raise an alert only when the same (type, ref_id) is not already sitting
+      // unread. Once the user reads it, a still-unresolved condition surfaces
+      // again on the next check rather than being suppressed forever.
+      // `ref_id IS ?` (not `=`) so a NULL ref_id matches a NULL ref_id.
+      const insertAlertStmt = db.prepare(
+        `INSERT INTO alerts (id, type, ref_id, message, is_read, due_date, created_at)
+         SELECT ?,?,?,?,0,?,?
+         WHERE NOT EXISTS (
+           SELECT 1 FROM alerts a
+           WHERE a.type = ? AND a.ref_id IS ? AND a.is_read = 0
+         )`,
       );
+      const insertAlert = (id, type, refId, message, dueDate, createdAt) =>
+        insertAlertStmt.run(
+          id,
+          type,
+          refId,
+          message,
+          dueDate,
+          createdAt,
+          type,
+          refId,
+        );
 
       const overdueInvoices = db
         .prepare(
@@ -59,7 +78,7 @@ function createAlertsDB(getDb, shiftsDB) {
         )
         .all(sevenDaysAgo);
       for (const inv of overdueInvoices) {
-        insertAlert.run(
+        insertAlert(
           generateId("alrt"),
           "invoice_overdue",
           inv.id,
@@ -77,7 +96,7 @@ function createAlertsDB(getDb, shiftsDB) {
         )
         .all(today);
       for (const inv of dueToday) {
-        insertAlert.run(
+        insertAlert(
           generateId("alrt"),
           "invoice_due",
           inv.invoice_id,
@@ -93,7 +112,7 @@ function createAlertsDB(getDb, shiftsDB) {
         )
         .all();
       for (const p of lowStock) {
-        insertAlert.run(
+        insertAlert(
           generateId("alrt"),
           "out_of_stock",
           p.id,
@@ -121,7 +140,7 @@ function createAlertsDB(getDb, shiftsDB) {
           ? new Date(`${lastInv.date}T${lastInv.time}`)
           : new Date(shift.started_at);
         if (refTime < tenHoursAgo) {
-          insertAlert.run(
+          insertAlert(
             generateId("alrt"),
             "shift_open",
             shift.id,

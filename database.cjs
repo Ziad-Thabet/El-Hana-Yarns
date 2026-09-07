@@ -384,6 +384,45 @@ function createTables() {
   migratePaymentRecordsShiftId();
   migrateOnlineOrderItemsWeightColumns();
   migrateCustomerDebtsInvoiceNumberUnique();
+  migrateAlertsDedupe();
+}
+
+// The alert engine used INSERT OR IGNORE against a freshly generated random
+// primary key, so it could never actually collide — every 30-minute tick
+// re-inserted an alert for the same still-open condition. Collapse the backlog
+// and enforce "at most one unread alert per (type, ref_id)" at the DB level.
+function migrateAlertsDedupe() {
+  try {
+    const removed = db
+      .prepare(
+        `DELETE FROM alerts
+         WHERE is_read = 0
+           AND id NOT IN (
+             SELECT id FROM (
+               SELECT id,
+                      ROW_NUMBER() OVER (
+                        PARTITION BY type, ref_id
+                        ORDER BY created_at DESC, id DESC
+                      ) AS rn
+               FROM alerts
+               WHERE is_read = 0
+             )
+             WHERE rn = 1
+           )`,
+      )
+      .run();
+    db.exec(
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_alerts_unique_unread
+         ON alerts(type, ref_id) WHERE is_read = 0`,
+    );
+    if (removed.changes > 0) {
+      console.log(
+        `✅ Migration: removed ${removed.changes} duplicate unread alerts`,
+      );
+    }
+  } catch (err) {
+    console.error("❌ migrateAlertsDedupe failed:", err.message);
+  }
 }
 
 function migrateSaleInvoicesOnlineColumns() {
@@ -696,26 +735,40 @@ function seedDefaultUsers() {
 
 function migratePasswordsToHash() {
   try {
+    // Rows still holding a cleartext password. Two cases are handled:
+    //  - never hashed  -> hash it, then clear the cleartext column
+    //  - already hashed -> just clear the leftover cleartext column
     const users = db
-      .prepare(
-        "SELECT id, password FROM users WHERE password IS NOT NULL AND password_hash IS NULL",
-      )
+      .prepare("SELECT id, password, password_hash FROM users WHERE password IS NOT NULL")
       .all();
 
-    if (users.length === 0) return; // All already migrated
+    if (users.length === 0) return; // Nothing in cleartext
 
+    const setHash = db.prepare(
+      "UPDATE users SET password_hash=?, password=NULL WHERE id=?",
+    );
+    const clearOnly = db.prepare(
+      "UPDATE users SET password=NULL WHERE id=?",
+    );
+
+    let hashed = 0;
+    let cleared = 0;
     const migrateTx = db.transaction(() => {
       for (const user of users) {
-        const hash = bcryptjs.hashSync(user.password, 12);
-        db.prepare("UPDATE users SET password_hash=? WHERE id=?").run(
-          hash,
-          user.id,
-        );
+        if (user.password_hash) {
+          clearOnly.run(user.id);
+          cleared++;
+        } else {
+          setHash.run(bcryptjs.hashSync(user.password, 12), user.id);
+          hashed++;
+        }
       }
     });
 
     migrateTx();
-    console.log(`✅ Migrated ${users.length} users to hashed passwords`);
+    console.log(
+      `✅ Password migration: ${hashed} hashed, ${cleared} leftover cleartext removed`,
+    );
   } catch (error) {
     console.error("❌ Password migration failed:", error.message);
   }

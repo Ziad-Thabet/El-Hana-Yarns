@@ -31,17 +31,28 @@
       "node_modules/sharp/**/*"
     ],
     "files": [
-      "dist/**/*",
-      "electron-main.cjs",
-      "database.cjs",
-      "preload.js",
-      "package.json",
-      "node_modules/better-sqlite3/**/*",
-      "node_modules/sharp/**/*"
+      "**/*",
+      "!src/**/*",
+      "!userdata/**/*",
+      "!release/**/*",
+      "!dist_electron/**/*",
+      "!docs/**/*",
+      "!.github/**/*",
+      "!.vscode/**/*",
+      "!seed-demo.cjs",
+      "!generate-thumbs.cjs",
+      "!*.md",
+      "!vite.config.*",
+      "!tsconfig*.json",
+      "!eslint.config.js",
+      "!postcss.config.js",
+      "!tailwind.config.ts",
+      "src/assets/icon-512.png"
     ],
     "extraResources": [],
     "win": {
-      "target": "portable"
+      "target": "portable",
+      "icon": "src/assets/icon-512.png"
     }
   },
   "dependencies": {
