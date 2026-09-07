@@ -18,6 +18,7 @@ const sessionManager = require("./session-manager.cjs");
 const rateLimiter = require("./rate-limiter.cjs");
 const { CHANNEL_PERMISSIONS } = require("./ipc-channels.cjs");
 const { formatDateYMD } = require("./shared/dateRules.cjs");
+const { receiptPageSize } = require("./shared/receiptIdentity.cjs");
 if (process.platform === "win32") {
   app.setAppUserModelId("com.elhanayarns.app");
 }
@@ -26,9 +27,8 @@ const isDev = !app.isPackaged;
 let db;
 const PERIODIC_BACKUP_INTERVAL_MS = 4 * 60 * 60 * 1000;
 const ALERT_CHECK_INTERVAL_MS = 30 * 60 * 1000;
-// 80mm × 297mm in microns — thermal receipt roll.
-// Recomputed by applyRuntimeSettings(); width in microns.
-let receiptPageSize = { width: 80000, height: 297000 };
+// Recomputed from settings by restartBackgroundTimers().
+let receiptPrintSize = receiptPageSize(80);
 const PRINT_TIMEOUT_MS = 2 * 60 * 1000;
 // Cleared on quit so the timers cannot fire against a closed database.
 const backgroundTimers = [];
@@ -139,10 +139,7 @@ function restartBackgroundTimers() {
   for (const timer of backgroundTimers.splice(0)) clearInterval(timer);
   const dbModule = require("./database.cjs");
   const config = dbModule.settingsDB.runtimeConfig();
-  receiptPageSize = {
-    width: Math.round(config.receiptWidthMm * 1000),
-    height: receiptPageSize.height,
-  };
+  receiptPrintSize = receiptPageSize(config.receiptWidthMm);
   backgroundTimers.push(
     setInterval(() => {
       try {
@@ -627,7 +624,7 @@ function registerHandlers() {
           {
             silent: false,
             printBackground: true,
-            pageSize: receiptPageSize,
+            pageSize: receiptPrintSize,
           },
           (success, errorType) => {
             clearTimeout(guard);

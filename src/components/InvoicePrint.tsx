@@ -6,6 +6,11 @@ import { Money, CartItemModel } from "@/lib/domain";
 import type { CartItem } from "@/lib/types";
 import { strings } from "@/lib/i18n/ar";
 import { getLanguage } from "@/lib/i18n/store";
+import { useSettings } from "@/features/settings/hooks";
+import {
+  buildShopHeaderLines,
+  buildShopFooterLine,
+} from "../../shared/receiptIdentity.mjs";
 interface InvoicePrintProps {
   open: boolean;
   onClose: () => void;
@@ -37,6 +42,26 @@ export function InvoicePrint({
   notes,
 }: InvoicePrintProps) {
   const printRef = useRef<HTMLDivElement>(null);
+  // Shop details and paper width come from settings, not i18n: they identify
+  // this particular shop rather than translating the interface.
+  const { data: settings } = useSettings();
+  const shopName = String(settings?.["shop.name"] ?? strings.invoice.shopName);
+  const shopTagline = String(
+    settings?.["shop.tagline"] ?? strings.invoice.shopTagline,
+  );
+  const shopAddress = String(settings?.["shop.address"] ?? "").trim();
+  const shopPhone = String(settings?.["shop.phone"] ?? "").trim();
+  const footerNote = String(settings?.["receipt.footerNote"] ?? "").trim();
+  const widthMm = Number(settings?.["receipt.widthMm"] ?? 80);
+  const shop = {
+    name: shopName,
+    tagline: shopTagline,
+    address: shopAddress,
+    phone: shopPhone,
+  };
+  const headerLines: { icon: string; text: string }[] =
+    buildShopHeaderLines(shop);
+  const footerLine: string = buildShopFooterLine(shop);
   const lang = getLanguage();
   const dir: "rtl" | "ltr" = lang === "ar" ? "rtl" : "ltr";
   const buildHTML = () => {
@@ -81,7 +106,7 @@ export function InvoicePrint({
       background: #fff;
       direction: ${dir};
       padding: 12px;
-      width: 80mm;
+      width: ${widthMm}mm;
       margin: 0 auto;
     }
     .header {
@@ -140,15 +165,20 @@ export function InvoicePrint({
     .footer .ty { font-size:14px; font-weight:800; color:#2a2060; margin-bottom:3px; }
     @media print {
       body { padding:0; }
-      @page { margin:4mm; size:80mm auto; }
+      @page { margin:4mm; size:${widthMm}mm auto; }
     }
   </style>
 </head>
 <body>
   <div class="header">
     <div class="logo">🧶</div>
-    <div class="shop-name">${strings.invoice.shopName}</div>
-    <div class="tagline">${strings.invoice.shopTagline}</div>
+    <div class="shop-name">${shopName}</div>
+    ${headerLines
+      .map(
+        (line) =>
+          `<div class="tagline">${line.icon ? `${line.icon} ` : ""}${line.text}</div>`,
+      )
+      .join("")}
   </div>
   <div class="inv-num">${strings.invoice.invoiceNumber} ${invoiceNumber}</div>
   <div class="meta">
@@ -193,7 +223,8 @@ export function InvoicePrint({
   ${notes ? `<div class="notes"><strong>${strings.invoice.notes}</strong> ${notes}</div>` : ""}
   <div class="footer">
     <div class="ty">${strings.invoice.thankYou}</div>
-    <div>${strings.invoice.shopName} — ${strings.invoice.shopTagline}</div>
+    <div>${footerLine}</div>
+    ${footerNote ? `<div>${footerNote}</div>` : ""}
   </div>
 </body>
 </html>`;
@@ -258,11 +289,18 @@ export function InvoicePrint({
             <div className="text-center border-b-2 border-gray-900 pb-3 mb-3">
               <div className="text-3xl mb-1">🧶</div>
               <div className="text-xl font-black" style={{ color: "#1a1a1a" }}>
-                {strings.invoice.shopName}
+                {shopName}
               </div>
-              <div className="text-xs" style={{ color: "#777" }}>
-                {strings.invoice.shopTagline}
-              </div>
+              {headerLines.map((line) => (
+                <div
+                  key={line.text}
+                  className="text-xs"
+                  style={{ color: "#777" }}
+                >
+                  {line.icon ? `${line.icon} ` : ""}
+                  {line.text}
+                </div>
+              ))}
             </div>
             <div
               className="text-center font-bold text-sm mb-2"
@@ -444,9 +482,8 @@ export function InvoicePrint({
               >
                 {strings.invoice.thankYou}
               </div>
-              <div>
-                {strings.invoice.shopName} — {strings.invoice.shopTagline}
-              </div>
+              <div>{footerLine}</div>
+              {footerNote && <div>{footerNote}</div>}
             </div>
           </div>
         </div>
