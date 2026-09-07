@@ -12,7 +12,7 @@ function mapPurchaseInvoice(inv, items, payments) {
     status: inv.status,
     paidAmount: inv.paid_amount,
     dueDate: inv.due_date ?? null,
-    receiptImage: images.readImageAsBase64(inv.receipt_image),
+    receiptImage: images.filePathToImgUrl(inv.receipt_image),
     items: items.map((i) => ({
       id: i.id,
       productName: i.product_name,
@@ -29,7 +29,7 @@ function mapPurchaseInvoice(inv, items, payments) {
       date: p.date,
       time: p.time,
       method: p.method,
-      receiptImage: images.readImageAsBase64(p.receipt_image),
+      receiptImage: images.filePathToImgUrl(p.receipt_image),
       notes: p.notes,
     })),
   };
@@ -66,17 +66,30 @@ function createPurchaseDB(getDb, productsDB) {
            ORDER BY pi.date DESC, pi.time DESC`,
         )
         .all();
-      return invoices.map((inv) => {
-        const items = db
-          .prepare("SELECT * FROM purchase_invoice_items WHERE invoice_id=?")
-          .all(inv.id);
-        const payments = db
-          .prepare(
-            "SELECT * FROM payment_records WHERE ref_id=? AND ref_type='purchase'",
-          )
-          .all(inv.id);
-        return mapPurchaseInvoice(inv, items, payments);
-      });
+      if (invoices.length === 0) return [];
+      const itemsByInvoice = new Map();
+      for (const row of db
+        .prepare("SELECT * FROM purchase_invoice_items")
+        .all()) {
+        const bucket = itemsByInvoice.get(row.invoice_id);
+        if (bucket) bucket.push(row);
+        else itemsByInvoice.set(row.invoice_id, [row]);
+      }
+      const paymentsByInvoice = new Map();
+      for (const row of db
+        .prepare("SELECT * FROM payment_records WHERE ref_type='purchase'")
+        .all()) {
+        const bucket = paymentsByInvoice.get(row.ref_id);
+        if (bucket) bucket.push(row);
+        else paymentsByInvoice.set(row.ref_id, [row]);
+      }
+      return invoices.map((inv) =>
+        mapPurchaseInvoice(
+          inv,
+          itemsByInvoice.get(inv.id) ?? [],
+          paymentsByInvoice.get(inv.id) ?? [],
+        ),
+      );
     },
    getById(id) {
       const db = getDb();

@@ -1,7 +1,7 @@
 const { generateId } = require("../helpers/ids.cjs");
 const { formatDateYMD } = require("../../shared/dateRules.cjs");
 const { buildDateFilter } = require("../helpers/dateFilter.cjs");
-const { mapSaleInvoice } = require("./sales.cjs");
+const { hydrateSaleInvoices } = require("./sales.cjs");
 const { round } = require("../helpers/numbers.cjs");
 function mapShift(row) {
   if (!row) return null;
@@ -200,17 +200,7 @@ function createShiftsDB(getDb) {
           "SELECT * FROM sale_invoices WHERE shift_id=? AND voided=0 ORDER BY date DESC, time DESC",
         )
         .all(shiftId);
-      return invoices.map((inv) => {
-        const items = db
-          .prepare("SELECT * FROM sale_invoice_items WHERE invoice_id=?")
-          .all(inv.id);
-        const payments = db
-          .prepare(
-            "SELECT * FROM payment_records WHERE ref_id=? AND ref_type='sale' ORDER BY date ASC, time ASC",
-          )
-          .all(inv.id);
-        return mapSaleInvoice(db, inv, items, payments);
-      });
+      return hydrateSaleInvoices(db, invoices);
     },
     getAllInvoices(from, to) {
       const db = getDb();
@@ -223,17 +213,7 @@ function createShiftsDB(getDb) {
           `SELECT * FROM sale_invoices ${where} ORDER BY date DESC, time DESC`,
         )
         .all(...params);
-      return invoices.map((inv) => {
-        const items = db
-          .prepare("SELECT * FROM sale_invoice_items WHERE invoice_id=?")
-          .all(inv.id);
-        const payments = db
-          .prepare(
-            "SELECT * FROM payment_records WHERE ref_id=? AND ref_type='sale' ORDER BY date ASC, time ASC",
-          )
-          .all(inv.id);
-        return mapSaleInvoice(db, inv, items, payments);
-      });
+      return hydrateSaleInvoices(db, invoices);
     },
     getSummary(shiftId) {
       const totals = calcShiftTotals(shiftId);

@@ -70,7 +70,12 @@ function initDatabase() {
   }
 
   createTables();
-  migrateLegacyDates();
+  // Legacy date normalisation full-scans five tables. It only ever needed to
+  // run once, so it is gated on a marker rather than repeated on every launch,
+  // where its cost grows with the shop's entire history.
+  if (db.pragma("user_version", { simple: true }) === 0) {
+    migrateLegacyDates();
+  }
   seedDefaultUsers();
   // Versioned migrations run last, on top of the baseline shape the legacy
   // idempotent helpers above guarantee. These are allowed to throw: a database

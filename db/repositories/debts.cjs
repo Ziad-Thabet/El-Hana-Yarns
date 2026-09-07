@@ -21,7 +21,7 @@ function mapDebt(row, payments = [], customerPhone = null) {
       date: p.date,
       time: p.time,
       method: p.method,
-      receiptImage: images.readImageAsBase64(p.receipt_image),
+      receiptImage: images.filePathToImgUrl(p.receipt_image),
       notes: p.notes,
     })),
   };
@@ -30,20 +30,35 @@ function createDebtsDB(getDb) {
   const debtsDB = {
     getAll() {
       const db = getDb();
-      return db
+      const debts = db
         .prepare("SELECT * FROM customer_debts ORDER BY created_date DESC")
-        .all()
-        .map((d) => {
-          const payments = db
-            .prepare(
-              "SELECT * FROM payment_records WHERE ref_id=? AND ref_type='sale' ORDER BY date ASC, time ASC",
-            )
-            .all(d.invoice_id);
-          const customer = db
-            .prepare("SELECT phone FROM customers WHERE id=?")
-            .get(d.customer_id);
-          return mapDebt(d, payments, customer?.phone ?? null);
-        });
+        .all();
+      if (debts.length === 0) return [];
+      // Two bulk lookups rather than two per debt.
+      const payments = db
+        .prepare(
+          "SELECT * FROM payment_records WHERE ref_type='sale' ORDER BY date ASC, time ASC",
+        )
+        .all();
+      const paymentsByInvoice = new Map();
+      for (const p of payments) {
+        const bucket = paymentsByInvoice.get(p.ref_id);
+        if (bucket) bucket.push(p);
+        else paymentsByInvoice.set(p.ref_id, [p]);
+      }
+      const phoneByCustomer = new Map(
+        db
+          .prepare("SELECT id, phone FROM customers")
+          .all()
+          .map((c) => [c.id, c.phone]),
+      );
+      return debts.map((d) =>
+        mapDebt(
+          d,
+          paymentsByInvoice.get(d.invoice_id) ?? [],
+          phoneByCustomer.get(d.customer_id) ?? null,
+        ),
+      );
     },
     getById(id) {
       const db = getDb();

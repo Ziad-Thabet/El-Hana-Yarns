@@ -3,12 +3,87 @@ const { nowDateTime, normalizeIsoDate } = require("../helpers/isoDates.cjs");
 const images = require("../helpers/images.cjs");
 const { safeNumber } = require("../helpers/numbers.cjs");
 const { stockUnitsFor } = require("../../shared/stockUnits.cjs");
-function mapSaleInvoice(db, inv, items, payments = []) {
-  const debt = db
-    .prepare(
-      "SELECT total_amount, paid_amount, remaining_amount FROM customer_debts WHERE invoice_id=? LIMIT 1",
-    )
-    .get(inv.id);
+const { nextDocumentNumber } = require("../helpers/documentNumbers.cjs");
+// SQLite's default parameter ceiling is 999; stay clear of it when expanding
+// an IN (...) list.
+const MAX_SQL_PARAMS = 900;
+
+function chunked(list, size = MAX_SQL_PARAMS) {
+  const out = [];
+  for (let i = 0; i < list.length; i += size) out.push(list.slice(i, i + size));
+  return out;
+}
+
+/** Runs one query per chunk of ids, substituting the IN placeholder list. */
+function fetchByIds(db, sqlTemplate, ids) {
+  const rows = [];
+  for (const part of chunked(ids)) {
+    const placeholders = part.map(() => "?").join(",");
+    rows.push(
+      ...db.prepare(sqlTemplate.replace("__IDS__", placeholders)).all(...part),
+    );
+  }
+  return rows;
+}
+
+function groupBy(rows, key) {
+  const map = new Map();
+  for (const row of rows) {
+    const bucket = map.get(row[key]);
+    if (bucket) bucket.push(row);
+    else map.set(row[key], [row]);
+  }
+  return map;
+}
+
+/**
+ * Attaches items, payments and debt to a set of invoice rows using three bulk
+ * queries instead of three per invoice.
+ *
+ * The previous shape ran 1 + 3N queries and inlined every receipt image as
+ * base64, which meant a synchronous file read per payment on the main process
+ * and megabytes of payload across the IPC bridge for a single list render.
+ */
+function hydrateSaleInvoices(db, invoices) {
+  if (invoices.length === 0) return [];
+  // Deduplicate before chunking: a repeated id spread across two chunks would
+  // otherwise have its rows fetched — and concatenated — twice.
+  const ids = [...new Set(invoices.map((inv) => inv.id))];
+
+  const items = fetchByIds(
+    db,
+    "SELECT * FROM sale_invoice_items WHERE invoice_id IN (__IDS__)",
+    ids,
+  );
+  const payments = fetchByIds(
+    db,
+    `SELECT * FROM payment_records
+      WHERE ref_type='sale' AND ref_id IN (__IDS__)
+      ORDER BY date ASC, time ASC`,
+    ids,
+  );
+  const debts = fetchByIds(
+    db,
+    `SELECT invoice_id, total_amount, paid_amount, remaining_amount
+       FROM customer_debts WHERE invoice_id IN (__IDS__)`,
+    ids,
+  );
+
+  const itemsByInvoice = groupBy(items, "invoice_id");
+  const paymentsByInvoice = groupBy(payments, "ref_id");
+  const debtByInvoice = new Map(debts.map((d) => [d.invoice_id, d]));
+
+  return invoices.map((inv) =>
+    mapSaleInvoice(
+      inv,
+      itemsByInvoice.get(inv.id) ?? [],
+      paymentsByInvoice.get(inv.id) ?? [],
+      debtByInvoice.get(inv.id) ?? null,
+    ),
+  );
+}
+
+function mapSaleInvoice(inv, items, payments = [], debt = null) {
   return {
     id: inv.id,
     invoiceNumber: inv.invoice_number,
@@ -27,7 +102,7 @@ function mapSaleInvoice(db, inv, items, payments = []) {
       date: p.date,
       time: p.time,
       method: p.method,
-      receiptImage: images.readImageAsBase64(p.receipt_image),
+      receiptImage: images.filePathToImgUrl(p.receipt_image),
       notes: p.notes,
     })),
     items: items.map((i) => ({
@@ -50,22 +125,12 @@ function createSalesDB(getDb, productsDB) {
   const salesDB = {
     getAll() {
       const db = getDb();
-      return db
+      const invoices = db
         .prepare(
           "SELECT * FROM sale_invoices WHERE voided=0 ORDER BY date DESC, time DESC",
         )
-        .all()
-        .map((inv) => {
-          const items = db
-            .prepare("SELECT * FROM sale_invoice_items WHERE invoice_id=?")
-            .all(inv.id);
-          const payments = db
-            .prepare(
-              "SELECT * FROM payment_records WHERE ref_id=? AND ref_type='sale' ORDER BY date ASC, time ASC",
-            )
-            .all(inv.id);
-          return mapSaleInvoice(db, inv, items, payments);
-        });
+        .all();
+      return hydrateSaleInvoices(db, invoices);
     },
     getById(id) {
       const db = getDb();
@@ -79,13 +144,18 @@ function createSalesDB(getDb, productsDB) {
           "SELECT * FROM payment_records WHERE ref_id=? AND ref_type='sale' ORDER BY date ASC, time ASC",
         )
         .all(id);
-      return mapSaleInvoice(db, inv, items, payments);
+      const debt = db
+        .prepare(
+          "SELECT invoice_id, total_amount, paid_amount, remaining_amount FROM customer_debts WHERE invoice_id=? LIMIT 1",
+        )
+        .get(id);
+      return mapSaleInvoice(inv, items, payments, debt ?? null);
     },
     complete(checkoutData) {
       const db = getDb();
       const id = generateId("sinv");
       const { date, time } = nowDateTime();
-      const invoiceNumber = `SL-${Date.now()}`;
+      let invoiceNumber = null;
       const shiftId = checkoutData.shiftId ?? null;
       const totalPaid = checkoutData.totalPaid ?? checkoutData.total ?? 0;
       const remainingDebt = Math.max(0, (checkoutData.total ?? 0) - totalPaid);
@@ -117,6 +187,12 @@ function createSalesDB(getDb, productsDB) {
       });
       let createdDebt = null;
       const completeTx = db.transaction(() => {
+        invoiceNumber = nextDocumentNumber(db, {
+          table: "sale_invoices",
+          column: "invoice_number",
+          prefix: "SL",
+          date,
+        });
         db.prepare(
           "INSERT INTO sale_invoices (id, invoice_number, date, time, total, cashier, shift_id) VALUES (?,?,?,?,?,?,?)",
         ).run(
@@ -243,20 +319,7 @@ function createSalesDB(getDb, productsDB) {
         params = [];
       }
       query += " ORDER BY si.date DESC, si.time DESC";
-      return db
-        .prepare(query)
-        .all(...params)
-        .map((inv) => {
-          const items = db
-            .prepare("SELECT * FROM sale_invoice_items WHERE invoice_id=?")
-            .all(inv.id);
-          const payments = db
-            .prepare(
-              "SELECT * FROM payment_records WHERE ref_id=? AND ref_type='sale' ORDER BY date ASC, time ASC",
-            )
-            .all(inv.id);
-          return mapSaleInvoice(db, inv, items, payments);
-        });
+      return hydrateSaleInvoices(db, db.prepare(query).all(...params));
     },
     getStats(from, to) {
       const db = getDb();
@@ -296,4 +359,4 @@ function createSalesDB(getDb, productsDB) {
   };
   return salesDB;
 }
-module.exports = { createSalesDB, mapSaleInvoice };
+module.exports = { createSalesDB, mapSaleInvoice, hydrateSaleInvoices };

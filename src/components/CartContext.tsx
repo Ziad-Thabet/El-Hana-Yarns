@@ -1,4 +1,10 @@
-import { createContext, useState, useCallback, ReactNode } from "react";
+import {
+  createContext,
+  useState,
+  useCallback,
+  useMemo,
+  ReactNode,
+} from "react";
 import { CartItemModel } from "@/lib/domain";
 import type { CartItem, Product } from "@/lib/types";
 import { stockUnitsFor } from "../../shared/stockUnits.mjs";
@@ -129,22 +135,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(CART_STORAGE_KEY);
     setCart([]);
   }, []);
-  const total = cart.reduce(
-    (sum, item) => sum + CartItemModel.from(item).lineTotal,
-    0,
+  const total = useMemo(
+    () => cart.reduce((sum, item) => sum + CartItemModel.from(item).lineTotal, 0),
+    [cart],
+  );
+  // A fresh object here re-rendered every consumer on any parent render, and
+  // the total allocated a CartItemModel per line each time.
+  const value = useMemo(
+    () => ({ cart, addToCart, updateQuantity, removeItem, clearCart, total }),
+    [cart, addToCart, updateQuantity, removeItem, clearCart, total],
   );
   return (
-    <CartContext.Provider
-      value={{
-        cart,
-        addToCart,
-        updateQuantity,
-        removeItem,
-        clearCart,
-        total,
-      }}
-    >
-      {children}
-    </CartContext.Provider>
+    <CartContext.Provider value={value}>{children}</CartContext.Provider>
   );
 }
