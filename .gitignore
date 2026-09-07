@@ -73,10 +73,8 @@ vite.config.ts.timestamp-*
 # even though similar patterns are ignored above
 # =========================================
 !assets/seed/demo.db
-# Personal working notes — not for the repo
-PROGRESS.md
-online-orders-design.md
-project-structure.md
+# Local editor/tooling configuration
+.claude/
 
 # Personal working notes — not for the repo
 PROGRESS.md
