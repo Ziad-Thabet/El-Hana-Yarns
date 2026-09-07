@@ -24,7 +24,24 @@ class SessionManager {
     if (entry && entry.date === today) return entry.loginAt;
     return null;
   }
+  /**
+   * Creates a session, replacing any that already exist.
+   *
+   * This app has a single window and one operator at a time. Allowing several
+   * live sessions is what made a stale admin session inheritable by whoever
+   * logged in next, so signing in now ends every earlier session outright.
+   */
   create(userId, username, role, displayName) {
+    if (this.sessions.size > 0) {
+      for (const [id, existing] of this.sessions.entries()) {
+        if (existing.userId !== userId) {
+          console.log(
+            `[Session] Replacing active session for "${existing.username}" with "${username}"`,
+          );
+        }
+        this.sessions.delete(id);
+      }
+    }
     const sessionId = `sess_${userId}_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
     const now = Date.now();
     const firstLoginAt = this._recordFirstLogin(userId);

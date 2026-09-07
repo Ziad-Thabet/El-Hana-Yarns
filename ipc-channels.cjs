@@ -1,7 +1,7 @@
 const CHANNEL_PERMISSIONS = {
   // Auth
   "auth:login": "public",
-  "auth:logout": "any",
+  "auth:logout": "public",
   "auth:getSession": "any",
   "auth:getUsers": "admin",
   "auth:changePassword": "admin",
@@ -73,12 +73,6 @@ const CHANNEL_PERMISSIONS = {
   "shifts:getSummary": "any",
   // Print
   "print:invoice": "any",
-  // Legacy channels
-  "complete-checkout": "any",
-  "save-purchase-invoice": "admin",
-  "update-purchase-payment": "admin",
-  "generate-report": "admin",
-
   // Employees
   "employees:getAll": "admin",
   "employees:getById": "admin",

@@ -8,10 +8,11 @@ const {
   shell,
 } = require("electron");
 const path = require("path");
-app.commandLine.appendSwitch("disable-features", "AutofillServerCommunication");
+// One comma-separated value: appendSwitch replaces any previous value for the
+// same switch, so calling it twice silently dropped the first feature.
 app.commandLine.appendSwitch(
   "disable-features",
-  "AutofillEnableSupportForContours",
+  "AutofillServerCommunication,AutofillEnableSupportForContours",
 );
 const sessionManager = require("./session-manager.cjs");
 const rateLimiter = require("./rate-limiter.cjs");
@@ -24,6 +25,12 @@ let mainWindow;
 const isDev = !app.isPackaged;
 let db;
 const PERIODIC_BACKUP_INTERVAL_MS = 4 * 60 * 60 * 1000;
+const ALERT_CHECK_INTERVAL_MS = 30 * 60 * 1000;
+// 80mm × 297mm in microns — thermal receipt roll.
+const RECEIPT_PAGE_SIZE = { width: 80000, height: 297000 };
+const PRINT_TIMEOUT_MS = 2 * 60 * 1000;
+// Cleared on quit so the timers cannot fire against a closed database.
+const backgroundTimers = [];
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -75,6 +82,10 @@ function createWindow() {
   mainWindow.on("unmaximize", () => {
     mainWindow.webContents.send("window:maximized", false);
   });
+  // Drop the reference so the BrowserWindow and its listeners can be collected.
+  mainWindow.on("closed", () => {
+    mainWindow = null;
+  });
 }
 
 function handle(channel, fn) {
@@ -82,30 +93,21 @@ function handle(channel, fn) {
   if (!permission) {
     console.warn(`[Security] Channel not in permissions map: ${channel}`);
   }
-  ipcMain.handle(channel, async (_, ...args) => {
-    // NOTE: declared here (not inside the `if` below) so that handlers always
-    // receive the authenticated user session. Previously this was block-scoped,
-    // which silently leaked Electron's own `session` module into every handler.
+  // `auth` is a dedicated second argument supplied by the preload bridge, kept
+  // separate from `payload` so a caller cannot forge a session by passing
+  // `{ sessionId: ... }` as request data.
+  ipcMain.handle(channel, async (_event, payload, auth) => {
+    // Declared here (not inside the `if`) so handlers always receive the
+    // authenticated session; when block-scoped it silently leaked Electron's
+    // own `session` module into every handler.
     let userSession = null;
     try {
       if (permission !== "public") {
-        const firstArg = args[0];
-        const sessionIdFromRequest =
-          typeof firstArg === "string" && firstArg.length >= 20
-            ? firstArg
-            : typeof firstArg?.sessionId === "string"
-              ? firstArg.sessionId
-              : null;
-
-        userSession = sessionIdFromRequest
-          ? sessionManager.get(sessionIdFromRequest)
-          : null;
-        if (!userSession) {
-          const activeSessions = sessionManager.getAll
-            ? sessionManager.getAll()
-            : [];
-          userSession = activeSessions.length > 0 ? activeSessions[0] : null;
-        }
+        const sessionId =
+          typeof auth?.sessionId === "string" ? auth.sessionId : null;
+        userSession = sessionId ? sessionManager.get(sessionId) : null;
+        // No "use whichever session happens to be first" fallback: with more
+        // than one live session that handed the caller someone else's role.
         if (!userSession) {
           throw new Error("Authentication required");
         }
@@ -116,7 +118,7 @@ function handle(channel, fn) {
           throw new Error("صلاحيات المسؤول مطلوبة لهذه العملية");
         }
       }
-      const result = await fn(...args, userSession);
+      const result = await fn(payload, userSession);
       return { success: true, data: result };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -232,13 +234,11 @@ function registerHandlers() {
     };
   });
 
-  ipcMain.handle("auth:logout", async (_, sessionId) => {
-    try {
-      if (sessionId) sessionManager.destroy(sessionId);
-      return { success: true, data: { success: true } };
-    } catch {
-      return { success: true, data: { success: true } };
-    }
+  // Public: signing out must work even once a session has already expired,
+  // otherwise the UI cannot clear itself.
+  handle("auth:logout", (sessionId) => {
+    if (typeof sessionId === "string") sessionManager.destroy(sessionId);
+    return { success: true };
   });
   handle("auth:getSession", (sessionId) => sessionManager.get(sessionId));
   handle("auth:getActiveSession", () => {
@@ -285,13 +285,6 @@ function registerHandlers() {
     purchaseDB.addPayment(invoiceId, paymentData),
   );
   handle("purchase:delete", (id) => purchaseDB.delete(id));
-  // Legacy
-  handle("save-purchase-invoice", (invoiceData) =>
-    purchaseDB.save(invoiceData),
-  );
-  handle("update-purchase-payment", ({ invoiceId, ...paymentData }) =>
-    purchaseDB.addPayment(invoiceId, paymentData),
-  );
   // ── SALES ─────────────────────────────────
   handle("sales:getAll", () => salesDB.getAll());
   handle("sales:getById", (id) => salesDB.getById(id));
@@ -305,8 +298,6 @@ function registerHandlers() {
     salesDB.getBySource(source, from, to),
   );
   handle("sales:getStats", ({ from, to }) => salesDB.getStats(from, to));
-  // Legacy
-  handle("complete-checkout", (checkoutData) => salesDB.complete(checkoutData));
   // ── CUSTOMERS ─────────────────────────────
   handle("customers:getAll", () => customersDB.getAll());
   handle("customers:getById", (id) => customersDB.getById(id));
@@ -369,7 +360,6 @@ function registerHandlers() {
   );
   // ── REPORTS ───────────────────────────────
   handle("reports:generate", (reportData) => reportsDB.generate(reportData));
-  handle("generate-report", (reportData) => reportsDB.generate(reportData));
   // ── SHIFTS ────────────────────────────────
   handle("shifts:getActive", ({ userId, date }) =>
     shiftsDB.getActive(userId, date),
@@ -549,35 +539,61 @@ function registerHandlers() {
   });
   // ── PRINT INVOICE ─────────────────────────
   ipcMain.handle("print:invoice", async (event, htmlContent) => {
+    if (typeof htmlContent !== "string") {
+      return { success: false, message: "Invalid print content" };
+    }
+    let printWin = null;
+    // Guarantees the hidden window is released down every path: a failed load,
+    // a print callback that never fires, or a thrown error. Previously the only
+    // close() sat inside the print callback, so any of those leaked a window.
+    const destroy = () => {
+      if (printWin && !printWin.isDestroyed()) printWin.destroy();
+      printWin = null;
+    };
     try {
-      const printWin = new BrowserWindow({
+      printWin = new BrowserWindow({
         show: false,
         webPreferences: {
           nodeIntegration: false,
           contextIsolation: true,
+          sandbox: true,
+          javascript: false,
         },
+      });
+      // Wait for the document to be ready rather than racing a fixed timeout.
+      const ready = new Promise((resolve) => {
+        printWin.webContents.once("did-finish-load", resolve);
       });
       await printWin.loadURL(
         "data:text/html;charset=utf-8," + encodeURIComponent(htmlContent),
       );
-      await new Promise((resolve) => setTimeout(resolve, 800));
-      printWin.webContents.print(
-        {
-          silent: false,
-          printBackground: true,
-          pageSize: { width: 80000, height: 297000 },
-        },
-        (success, errorType) => {
-          if (!success && errorType !== "cancelled") {
-            console.error("[Print Error]", errorType);
-          }
-          printWin.close();
-        },
-      );
+      await ready;
+
+      await new Promise((resolve) => {
+        // A print dialog the user never dismisses must not pin the window
+        // forever; fall back to tearing it down after a generous timeout.
+        const guard = setTimeout(resolve, PRINT_TIMEOUT_MS);
+        printWin.webContents.print(
+          {
+            silent: false,
+            printBackground: true,
+            pageSize: RECEIPT_PAGE_SIZE,
+          },
+          (success, errorType) => {
+            clearTimeout(guard);
+            if (!success && errorType !== "cancelled") {
+              console.error("[Print Error]", errorType);
+            }
+            resolve();
+          },
+        );
+      });
       return { success: true };
     } catch (error) {
       console.error("[IPC Error] print:invoice:", error.message);
       return { success: false, message: error.message };
+    } finally {
+      destroy();
     }
   });
 }
@@ -628,25 +644,21 @@ if (!gotSingleInstanceLock) {
     dbModule.initDatabase();
     // A retail day accumulates cash and stock movements worth more than the
     // once-per-launch snapshot; take a rolling one while the shop is open.
-    setInterval(
-      () => {
+    backgroundTimers.push(
+      setInterval(() => {
         try {
           dbModule.backups.create("periodic");
         } catch (err) {
           console.error("[Backup]", err.message);
         }
-      },
-      PERIODIC_BACKUP_INTERVAL_MS,
-    );
-    setInterval(
-      () => {
+      }, PERIODIC_BACKUP_INTERVAL_MS),
+      setInterval(() => {
         try {
           dbModule.alertsDB.runChecks();
         } catch (err) {
           console.error("[AlertEngine]", err.message);
         }
-      },
-      30 * 60 * 1000,
+      }, ALERT_CHECK_INTERVAL_MS),
     );
     protocol.handle("app-img", (request) => {
       try {
@@ -709,6 +721,16 @@ if (!gotSingleInstanceLock) {
     app.on("activate", () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow();
     });
+  });
+  app.on("before-quit", () => {
+    for (const timer of backgroundTimers.splice(0)) clearInterval(timer);
+    sessionManager.destroyAll();
+    try {
+      // Checkpoints the WAL so the database is left in a clean state.
+      require("./database.cjs").closeDatabase();
+    } catch (err) {
+      console.error("[Shutdown]", err.message);
+    }
   });
   app.on("window-all-closed", () => {
     sessionManager.destroyAll();

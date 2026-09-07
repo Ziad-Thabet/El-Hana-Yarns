@@ -413,12 +413,6 @@ declare global {
         >;
       };
 
-      completeCheckout: (checkoutData: unknown) => Promise<ApiResponse>;
-      savePurchaseInvoice: (invoiceData: unknown) => Promise<ApiResponse>;
-      updatePurchasePayment: (paymentData: unknown) => Promise<ApiResponse>;
-      generateReport: (reportData: unknown) => Promise<ApiResponse>;
-      generateInvoice: (invoiceData: unknown) => Promise<ApiResponse>;
-
       windowControls: {
         minimize: () => void;
         maximize: () => void;
