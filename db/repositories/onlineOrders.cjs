@@ -18,6 +18,7 @@ const {
   stockUnitsFor,
   stockUnitsSql,
 } = require("../../shared/stockUnits.cjs");
+const { nextDocumentNumber } = require("../helpers/documentNumbers.cjs");
 
 function resolvePaymentStatus(prepaidAmount, remainingAmount) {
   if (remainingAmount <= 0) return ORDER_PAYMENT_STATUS.PAID;
@@ -499,7 +500,12 @@ function createOnlineOrdersDB(
         );
 
         const invoiceId = generateId("sinv");
-        const invoiceNumber = `OL-${Date.now()}`;
+        const invoiceNumber = nextDocumentNumber(db, {
+          table: "sale_invoices",
+          column: "invoice_number",
+          prefix: "OL",
+          date,
+        });
         db.prepare(
           `INSERT INTO sale_invoices
              (id, invoice_number, date, time, total, cashier, shift_id, source, voided)
