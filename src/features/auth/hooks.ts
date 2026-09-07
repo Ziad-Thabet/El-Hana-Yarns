@@ -48,3 +48,22 @@ export function useRegister() {
     },
   });
 }
+
+/** Wildcard: a role that holds it may do anything. */
+const ALL = "*";
+
+/**
+ * Asks what the signed-in user may do, rather than what they are.
+ *
+ * Components should prefer `can("catalogue.manage")` over `isAdmin`: the former
+ * survives a role being added or a permission being moved, the latter does not.
+ * Returns false while the session is loading — deny by default.
+ */
+export function useCan(): (capability: string) => boolean {
+  const { data: session } = useActiveSession();
+  const capabilities = session?.capabilities;
+  return (capability: string) => {
+    if (!capabilities) return false;
+    return capabilities.includes(ALL) || capabilities.includes(capability);
+  };
+}

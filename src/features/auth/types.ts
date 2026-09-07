@@ -9,6 +9,8 @@ export interface AuthSession {
   startedAt: string;
   firstLoginAt: string | null;
   displayName: string;
+  /** What this session may do. `["*"]` means everything. */
+  capabilities?: string[];
 }
 
 export interface LoginCredentials {

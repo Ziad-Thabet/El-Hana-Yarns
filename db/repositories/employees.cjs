@@ -6,7 +6,7 @@ const {
   workDaysInMonth,
 } = require("../../shared/dateRules.cjs");
 const { mapShift } = require("./shifts.cjs");
-function createEmployeesDB(getDb, shiftsDB) {
+function createEmployeesDB(getDb, shiftsDB, rolesDB = null) {
   const employeesDB = {
     getAll() {
       return getDb()
@@ -85,6 +85,13 @@ function createEmployeesDB(getDb, shiftsDB) {
       }
       return this.getById(id);
     },
+    /** Roles are validated here rather than by a database constraint. */
+    assertValidRole(roleId) {
+      if (!roleId) return;
+      if (rolesDB && !rolesDB.exists(roleId)) {
+        throw new Error(`دور غير معروف: ${roleId}`);
+      }
+    },
     update(id, data) {
       const fields = [];
       const vals = [];
@@ -100,12 +107,33 @@ function createEmployeesDB(getDb, shiftsDB) {
         fields.push("daily_hours=?");
         vals.push(data.dailyHours);
       }
+      // A role could not be changed after creation at all. It can now, but only
+      // to a role that exists — there is no database constraint behind this.
+      let roleChanged = false;
+      if (data.role !== undefined) {
+        this.assertValidRole(data.role);
+        const current = this.getById(id);
+        roleChanged = current?.role !== data.role;
+        fields.push("role=?");
+        vals.push(data.role);
+      }
       if (fields.length === 0) throw new Error("no_fields_to_update");
       vals.push(id);
       getDb()
         .prepare(`UPDATE users SET ${fields.join(",")} WHERE id=?`)
         .run(...vals);
-      return this.getById(id);
+      const updated = this.getById(id);
+      // Sessions cache the role id, so a reassignment only takes effect on the
+      // next sign-in. Rather than let someone keep the abilities of a role they
+      // no longer hold, end their session and make them re-authenticate.
+      if (roleChanged) {
+        Object.defineProperty(updated, "__sessionInvalidated", {
+          value: true,
+          enumerable: false,
+          configurable: true,
+        });
+      }
+      return updated;
     },
     setSalary(userId, amount, effectiveFrom, notes = null) {
       const id = generateId("sal");

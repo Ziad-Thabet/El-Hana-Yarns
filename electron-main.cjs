@@ -16,7 +16,10 @@ app.commandLine.appendSwitch(
 );
 const sessionManager = require("./session-manager.cjs");
 const rateLimiter = require("./rate-limiter.cjs");
-const { CHANNEL_PERMISSIONS } = require("./ipc-channels.cjs");
+const {
+  CHANNEL_PERMISSIONS,
+  CHANNEL_CAPABILITY,
+} = require("./ipc-channels.cjs");
 const {
   AUDIT_DESCRIPTORS,
   PASSWORD_KEYS,
@@ -148,6 +151,9 @@ function recordAudit(descriptor, channel, payload, result, userSession, status, 
 function handle(channel, fn) {
   const permission = CHANNEL_PERMISSIONS[channel];
   const auditDescriptor = AUDIT_DESCRIPTORS[channel] ?? null;
+  // Unmapped channels fall back to their own name, which no seeded role holds:
+  // deny by default, never allow by default.
+  const capability = CHANNEL_CAPABILITY[channel] ?? channel;
   if (!permission) {
     console.warn(`[Security] Channel not in permissions map: ${channel}`);
   }
@@ -169,9 +175,12 @@ function handle(channel, fn) {
         if (!userSession) {
           throw new Error("Authentication required");
         }
-        if (permission === "admin" && userSession.role !== "admin") {
+        if (
+          permission === "admin" &&
+          !db.rolesDB.hasCapability(userSession.role, capability)
+        ) {
           console.warn(
-            `[Security] Role violation: user="${userSession.username}" role="${userSession.role}" tried channel="${channel}"`,
+            `[Security] Capability denied: user="${userSession.username}" role="${userSession.role}" lacks "${capability}" for channel="${channel}"`,
           );
           // A refused attempt on a privileged channel is exactly the kind of
           // thing the log exists for.
@@ -271,6 +280,7 @@ function registerHandlers() {
     returnsDB,
     settingsDB,
     auditDB,
+    rolesDB,
   } = db;
   function getTodayDateYMD() {
     return formatDateYMD(new Date());
@@ -326,6 +336,7 @@ function registerHandlers() {
       startedAt: activeSession?.startedAt ?? new Date().toISOString(),
       firstLoginAt,
       shiftId: activeShift?.id ?? null,
+      capabilities: db.rolesDB.capabilitiesFor(user.role),
     };
   });
 
@@ -356,6 +367,7 @@ function registerHandlers() {
       startedAt: activeSession?.startedAt ?? new Date().toISOString(),
       firstLoginAt: sessionManager.getFirstLoginAt(user.userId),
       shiftId: activeShift?.id ?? null,
+      capabilities: db.rolesDB.capabilitiesFor(user.role),
     };
   });
 
@@ -365,7 +377,17 @@ function registerHandlers() {
     if (typeof sessionId === "string") sessionManager.destroy(sessionId);
     return { success: true };
   });
-  handle("auth:getSession", (sessionId) => sessionManager.get(sessionId));
+  /** Attaches the capability list so the UI can ask "can I?" not "am I admin?". */
+  function withCapabilities(sessionData) {
+    if (!sessionData) return sessionData;
+    return {
+      ...sessionData,
+      capabilities: db.rolesDB.capabilitiesFor(sessionData.role),
+    };
+  }
+  handle("auth:getSession", (sessionId) =>
+    withCapabilities(sessionManager.get(sessionId)),
+  );
   handle("auth:getActiveSession", () => {
     db.globalAutoCloseShifts();
     const sessions = sessionManager.getAll();
@@ -374,7 +396,11 @@ function registerHandlers() {
     const todayDate = formatDateYMD(new Date());
     const activeShift = shiftsDB.getActive(s.userId, todayDate);
     const firstLoginAt = sessionManager.getFirstLoginAt(s.userId);
-    return { ...s, shiftId: activeShift?.id ?? null, firstLoginAt };
+    return withCapabilities({
+      ...s,
+      shiftId: activeShift?.id ?? null,
+      firstLoginAt,
+    });
   });
   handle("auth:getUsers", () => authDB.getUsers());
   handle("auth:changePassword", ({ userId, newPassword }) =>
@@ -512,7 +538,14 @@ function registerHandlers() {
   handle("employees:getAll", () => employeesDB.getAll());
   handle("employees:getById", (id) => employeesDB.getById(id));
   handle("employees:create", (data) => employeesDB.create(data));
-  handle("employees:update", ({ id, data }) => employeesDB.update(id, data));
+  handle("employees:update", ({ id, data }) => {
+    const updated = employeesDB.update(id, data);
+    if (updated?.__sessionInvalidated) {
+      sessionManager.destroyForUser(id);
+      delete updated.__sessionInvalidated;
+    }
+    return updated;
+  });
   handle("employees:setSalary", ({ userId, amount, effectiveFrom, notes }) =>
     employeesDB.setSalary(userId, amount, effectiveFrom, notes),
   );
@@ -786,6 +819,7 @@ if (!gotSingleInstanceLock) {
       returnsDB: dbModule.returnsDB,
       settingsDB: dbModule.settingsDB,
       auditDB: dbModule.auditDB,
+      rolesDB: dbModule.rolesDB,
       applyRuntimeSettings: dbModule.applyRuntimeSettings,
       backups: dbModule.backups,
     };

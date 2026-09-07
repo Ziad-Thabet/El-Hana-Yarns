@@ -21,6 +21,7 @@ import { LoginForm } from "@/features/auth/components/LoginForm";
 import { RegisterForm } from "@/features/auth/components/RegisterForm";
 import {
   useActiveSession,
+  useCan,
   useHasAnyUsers,
   useLogout,
 } from "@/features/auth/hooks";
@@ -54,7 +55,11 @@ const Index = () => {
     useHasAnyUsers();
   const [activeShift, setActiveShift] = useState<Shift | null>(null);
   const logout = useLogout();
-  const isAdmin = authSession?.role === "admin";
+  const can = useCan();
+  // Still a boolean for the components that take one, but the rule behind it
+  // is now the capability list rather than a hardcoded role string. The
+  // fallback keeps a session issued before this change working.
+  const isAdmin = can("*") || authSession?.role === "admin";
   const navItems = useMemo(() => getNavItemsForRole(!!isAdmin), [isAdmin]);
   useEffect(() => {
     const s = authSession as (AuthSession & { shiftId?: string }) | undefined;

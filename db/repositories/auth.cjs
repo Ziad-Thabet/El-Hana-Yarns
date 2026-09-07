@@ -39,6 +39,11 @@ function createAuthDB(getDb) {
       // unusable by design rather than a reason to fall back to comparison.
       if (!user.password_hash) return null;
       if (!bcryptjs.compareSync(password, user.password_hash)) return null;
+      // A deactivated account must fail authentication itself, not merely be
+      // refused by a later check in the IPC layer. Until now `is_active` was
+      // enforced only there, so the account was disabled by convention rather
+      // than by the login path.
+      if (user.is_active === 0) return null;
       return {
         userId: user.id,
         username: user.username,

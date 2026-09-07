@@ -450,6 +450,62 @@ const MIGRATIONS = [
       `);
     },
   },
+  {
+    version: 5,
+    name: "roles-and-capabilities",
+    up(db) {
+      // `users.role` keeps holding the role id, so every existing 'admin' and
+      // 'staff' row is already correct — no data migration, and a database
+      // opened by an older build still works.
+      //
+      // Deliberately no foreign key from users.role to roles.id: that would
+      // force a rebuild of the one table half the schema references, to buy
+      // what a repository-level check gives for free.
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS roles (
+          id          TEXT PRIMARY KEY,
+          name_ar     TEXT NOT NULL,
+          name_en     TEXT NOT NULL,
+          is_system   INTEGER NOT NULL DEFAULT 0,
+          description TEXT,
+          created_at  TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS role_capabilities (
+          role_id    TEXT NOT NULL,
+          capability TEXT NOT NULL,
+          PRIMARY KEY (role_id, capability),
+          FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE
+        );
+      `);
+
+      const now = new Date().toISOString();
+      const insertRole = db.prepare(
+        `INSERT OR IGNORE INTO roles (id, name_ar, name_en, is_system, description, created_at)
+         VALUES (?,?,?,?,?,?)`,
+      );
+      insertRole.run("admin", "مسؤول", "Administrator", 1, "صلاحيات كاملة", now);
+      insertRole.run("staff", "كاشير", "Cashier", 1, "البيع والعملاء", now);
+
+      const insertCap = db.prepare(
+        "INSERT OR IGNORE INTO role_capabilities (role_id, capability) VALUES (?,?)",
+      );
+      // '*' rather than an enumerated list: an admin that has to be granted
+      // each new capability is an admin who silently loses access whenever a
+      // feature is added.
+      insertCap.run("admin", "*");
+
+      // The cashier set is derived from today's behaviour: exactly the channels
+      // that are currently permission "any". Seeding it from the live map keeps
+      // the effective permissions provably unchanged.
+      const { CHANNEL_PERMISSIONS } = require("../ipc-channels.cjs");
+      const { CHANNEL_CAPABILITY } = require("../ipc-channels.cjs");
+      for (const [channel, permission] of Object.entries(CHANNEL_PERMISSIONS)) {
+        if (permission !== "any") continue;
+        insertCap.run("staff", CHANNEL_CAPABILITY[channel] ?? channel);
+      }
+    },
+  },
 ];
 
 function getSchemaVersion(db) {
