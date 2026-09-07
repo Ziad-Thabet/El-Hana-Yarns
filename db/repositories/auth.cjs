@@ -34,15 +34,11 @@ function createAuthDB(getDb) {
         .prepare("SELECT * FROM users WHERE username=?")
         .get(username);
       if (!user) return null;
-      const passwordHash = user.password_hash || user.password;
-      if (!passwordHash) return null;
-      let passwordValid = false;
-      if (user.password_hash) {
-        passwordValid = bcryptjs.compareSync(password, user.password_hash);
-      } else if (user.password) {
-        passwordValid = password === user.password;
-      }
-      if (!passwordValid) return null;
+      // Only hashed credentials are accepted. Cleartext passwords are hashed
+      // and erased by the startup migration, so a row without a hash is
+      // unusable by design rather than a reason to fall back to comparison.
+      if (!user.password_hash) return null;
+      if (!bcryptjs.compareSync(password, user.password_hash)) return null;
       return {
         userId: user.id,
         username: user.username,
