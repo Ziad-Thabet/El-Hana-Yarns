@@ -50,6 +50,10 @@ function parseFileName(fileName) {
 
 function createBackupManager({ getDb, closeDb, dbPath, dataDir }) {
   const backupDir = path.join(dataDir, BACKUP_DIR_NAME);
+  // Overridden by configure() once settings are loaded. The very first
+  // startup snapshot is taken before that, so it prunes to the compiled
+  // default; every later backup uses the configured retention.
+  let maxBackups = MAX_BACKUPS;
 
   function ensureDir() {
     if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true });
@@ -74,7 +78,7 @@ function createBackupManager({ getDb, closeDb, dbPath, dataDir }) {
       .sort((a, b) => b.fileName.localeCompare(a.fileName));
   }
 
-  function prune(max = MAX_BACKUPS) {
+  function prune(max = maxBackups) {
     const all = list();
     let removed = 0;
     for (const entry of all.slice(max)) {
@@ -182,6 +186,9 @@ function createBackupManager({ getDb, closeDb, dbPath, dataDir }) {
 
   return {
     backupDir,
+    configure({ maxBackups: next } = {}) {
+      if (Number.isFinite(next) && next > 0) maxBackups = next;
+    },
     list,
     create,
     createDaily,

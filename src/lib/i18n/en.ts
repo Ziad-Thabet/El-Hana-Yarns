@@ -25,6 +25,7 @@ export const strings = {
     employees: "Employees",
     expenses: "Expenses",
     backups: "Backups",
+    settings: "Settings",
   },
 
   auth: {
@@ -594,6 +595,59 @@ export const strings = {
     returnedBy: "by",
     statusBadgeFull: "Fully returned",
     statusBadgePartial: "Partially returned",
+  },
+
+  settings: {
+    title: "Settings",
+    subtitle:
+      "The values the app runs on. Anything you leave alone keeps its default.",
+    save: "Save",
+    saveCount: "Save {count} change(s)",
+    saving: "Saving…",
+    saved: "Settings saved",
+    saveFailed: "Could not save settings",
+    customised: "Changed",
+    resetToDefault: "Reset to default",
+    resetDone: "Reset to the default value",
+    defaultIs: "Default: {value}",
+    groups: {
+      shop: "Shop details",
+      receipt: "Printed receipt",
+      inventory: "Inventory",
+      shift: "Shifts",
+      alerts: "Alerts",
+      security: "Security",
+      backup: "Backups",
+      barcode: "Barcodes",
+    },
+    labels: {
+      "shop.name": "Shop name",
+      "shop.tagline": "Tagline",
+      "shop.address": "Address",
+      "shop.phone": "Phone",
+      "receipt.widthMm": "Receipt width (mm)",
+      "receipt.footerNote": "Receipt footer note",
+      "inventory.lowStockThreshold": "Low-stock threshold",
+      "inventory.outOfStockThreshold": "Out-of-stock alert threshold",
+      "shift.staleHours": "Max open shift length (hours)",
+      "alerts.overdueInvoiceDays": "Purchase invoice overdue after (days)",
+      "alerts.checkIntervalMinutes": "Check alerts every (minutes)",
+      "security.sessionTimeoutHours": "Session length (hours)",
+      "security.maxLoginAttempts": "Login attempts before lockout",
+      "security.lockoutMinutes": "Lockout duration (minutes)",
+      "backup.retentionCount": "Backups to keep",
+      "backup.intervalHours": "Back up every (hours)",
+      "barcode.internalPrefix": "Internal barcode prefix",
+    },
+    hints: {
+      "inventory.lowStockThreshold":
+        "Products below this quantity show as low stock in reports",
+      "inventory.outOfStockThreshold":
+        "An alert is raised once quantity is at or below this",
+      "shift.staleHours":
+        "A shift with no activity for this long is closed automatically",
+      "receipt.widthMm": "Applies to both printing and the preview",
+    },
   },
 
   drivers: {

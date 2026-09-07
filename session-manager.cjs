@@ -2,9 +2,18 @@ const { formatDateYMD } = require("./shared/dateRules.cjs");
 class SessionManager {
   constructor() {
     this.sessions = new Map();
+    // Default; overridden by configure() once settings are loaded. This module
+    // is required before the database opens, so it cannot read settings itself.
     this.sessionTimeout = 24 * 60 * 60 * 1000; // 24 hours
 
     this.firstLoginMap = new Map();
+  }
+
+  /** Applies configured values; ignores anything missing or non-positive. */
+  configure({ sessionTimeoutMs } = {}) {
+    if (Number.isFinite(sessionTimeoutMs) && sessionTimeoutMs > 0) {
+      this.sessionTimeout = sessionTimeoutMs;
+    }
   }
 
   _recordFirstLogin(userId) {

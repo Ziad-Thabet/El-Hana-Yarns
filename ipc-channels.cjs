@@ -99,6 +99,12 @@ const CHANNEL_PERMISSIONS = {
   "returns:create": "admin",
   "returns:void": "admin",
   "returns:getAll": "admin",
+  // Settings — reads are open because non-admin views need thresholds;
+  // writes are admin only.
+  "settings:getClient": "any",
+  "settings:getAll": "admin",
+  "settings:update": "admin",
+  "settings:reset": "admin",
   // Backups (admin only — these read and replace the whole database)
   "backup:list": "admin",
   "backup:create": "admin",

@@ -27,7 +27,8 @@ let db;
 const PERIODIC_BACKUP_INTERVAL_MS = 4 * 60 * 60 * 1000;
 const ALERT_CHECK_INTERVAL_MS = 30 * 60 * 1000;
 // 80mm × 297mm in microns — thermal receipt roll.
-const RECEIPT_PAGE_SIZE = { width: 80000, height: 297000 };
+// Recomputed by applyRuntimeSettings(); width in microns.
+let receiptPageSize = { width: 80000, height: 297000 };
 const PRINT_TIMEOUT_MS = 2 * 60 * 1000;
 // Cleared on quit so the timers cannot fire against a closed database.
 const backgroundTimers = [];
@@ -129,6 +130,37 @@ function handle(channel, fn) {
   });
 }
 
+/**
+ * (Re)creates the background timers from the current settings. Called at
+ * startup and again whenever an interval setting changes, so a new value takes
+ * effect without a restart.
+ */
+function restartBackgroundTimers() {
+  for (const timer of backgroundTimers.splice(0)) clearInterval(timer);
+  const dbModule = require("./database.cjs");
+  const config = dbModule.settingsDB.runtimeConfig();
+  receiptPageSize = {
+    width: Math.round(config.receiptWidthMm * 1000),
+    height: receiptPageSize.height,
+  };
+  backgroundTimers.push(
+    setInterval(() => {
+      try {
+        dbModule.backups.create("periodic");
+      } catch (err) {
+        console.error("[Backup]", err.message);
+      }
+    }, config.backupIntervalMs || PERIODIC_BACKUP_INTERVAL_MS),
+    setInterval(() => {
+      try {
+        dbModule.alertsDB.runChecks();
+      } catch (err) {
+        console.error("[AlertEngine]", err.message);
+      }
+    }, config.alertIntervalMs || ALERT_CHECK_INTERVAL_MS),
+  );
+}
+
 function registerHandlers() {
   const {
     categoriesDB,
@@ -146,6 +178,7 @@ function registerHandlers() {
     driversDB,
     onlineOrdersDB,
     returnsDB,
+    settingsDB,
   } = db;
   function getTodayDateYMD() {
     return formatDateYMD(new Date());
@@ -449,6 +482,23 @@ function registerHandlers() {
       shiftId: resolveActiveShiftId(userSession),
     }),
   );
+  // ── SETTINGS ──────────────────────────────
+  handle("settings:getClient", () => settingsDB.getClient());
+  handle("settings:getAll", () => settingsDB.getAll());
+  handle("settings:update", (values, userSession) => {
+    const applied = settingsDB.setMany(values, userSession?.userId ?? null);
+    // Intervals, timeouts and the receipt size live outside the database, so
+    // push the new values out rather than waiting for a restart.
+    db.applyRuntimeSettings();
+    restartBackgroundTimers();
+    return applied;
+  });
+  handle("settings:reset", (key) => {
+    const result = settingsDB.reset(key);
+    db.applyRuntimeSettings();
+    restartBackgroundTimers();
+    return result;
+  });
   // ── BACKUPS ───────────────────────────────
   handle("backup:list", () => ({
     directory: db.backups.backupDir,
@@ -577,7 +627,7 @@ function registerHandlers() {
           {
             silent: false,
             printBackground: true,
-            pageSize: RECEIPT_PAGE_SIZE,
+            pageSize: receiptPageSize,
           },
           (success, errorType) => {
             clearTimeout(guard);
@@ -639,27 +689,14 @@ if (!gotSingleInstanceLock) {
       driversDB: dbModule.driversDB,
       onlineOrdersDB: dbModule.onlineOrdersDB,
       returnsDB: dbModule.returnsDB,
+      settingsDB: dbModule.settingsDB,
+      applyRuntimeSettings: dbModule.applyRuntimeSettings,
       backups: dbModule.backups,
     };
     dbModule.initDatabase();
     // A retail day accumulates cash and stock movements worth more than the
     // once-per-launch snapshot; take a rolling one while the shop is open.
-    backgroundTimers.push(
-      setInterval(() => {
-        try {
-          dbModule.backups.create("periodic");
-        } catch (err) {
-          console.error("[Backup]", err.message);
-        }
-      }, PERIODIC_BACKUP_INTERVAL_MS),
-      setInterval(() => {
-        try {
-          dbModule.alertsDB.runChecks();
-        } catch (err) {
-          console.error("[AlertEngine]", err.message);
-        }
-      }, ALERT_CHECK_INTERVAL_MS),
-    );
+    restartBackgroundTimers();
     protocol.handle("app-img", (request) => {
       try {
         const url = new URL(request.url);

@@ -391,6 +391,23 @@ const MIGRATIONS = [
       }
     },
   },
+  {
+    version: 3,
+    name: "settings",
+    up(db) {
+      // Stores overrides only. The registry in shared/settingsSchema.cjs owns
+      // the defaults, so an absent row means "unchanged" rather than "broken",
+      // and a new setting needs no data migration.
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS settings (
+          key        TEXT PRIMARY KEY,
+          value      TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          updated_by TEXT
+        );
+      `);
+    },
+  },
 ];
 
 function getSchemaVersion(db) {

@@ -15,6 +15,7 @@ import { DriversSection } from "@/features/drivers/components/DriversSection";
 import EmployeeManagement from "@/features/employees/components/EmployeeManagement";
 import ExpensesSection from "@/features/expenses/components/ExpensesSection";
 import { BackupsSection } from "@/features/backups/components/BackupsSection";
+import { SettingsSection } from "@/features/settings/components/SettingsSection";
 import { LoginForm } from "@/features/auth/components/LoginForm";
 import { RegisterForm } from "@/features/auth/components/RegisterForm";
 import {
@@ -23,7 +24,11 @@ import {
   useLogout,
 } from "@/features/auth/hooks";
 import type { AuthSession, Shift } from "@/lib/types";
-import { getNavItemsForRole, type NavTabId } from "@/lib/config/navigation";
+import {
+  getNavItemsForRole,
+  isAdminOnlyTab,
+  type NavTabId,
+} from "@/lib/config/navigation";
 import { strings } from "@/lib/i18n/ar";
 import { USER_ROLE_LABELS } from "@/lib/constants/status";
 import { AppShell } from "@/components/layout/AppShell";
@@ -72,16 +77,13 @@ const Index = () => {
       cancelled = true;
     };
   }, [authSession]);
+  // Derived from the nav config rather than a hand-kept list: the previous
+  // hardcoded array had drifted and omitted "reports", which the persisted
+  // activeTab in localStorage could restore a non-admin straight back into.
   useEffect(() => {
-    if (
-      !isRestoringSession &&
-      !isAdmin &&
-      (activeTab === "invoices" ||
-        activeTab === "employees" ||
-        activeTab === "expenses" ||
-        activeTab === "backups")
-    )
-      setActiveTab("sales");
+    if (!isRestoringSession && !isAdmin && isAdminOnlyTab(activeTab)) {
+      setActiveTab(DEFAULT_TAB);
+    }
   }, [activeTab, isAdmin, isRestoringSession]);
 
   useEffect(() => {
@@ -223,6 +225,8 @@ const Index = () => {
         return isAdmin ? <ExpensesSection /> : null;
       case "backups":
         return isAdmin ? <BackupsSection /> : null;
+      case "settings":
+        return isAdmin ? <SettingsSection /> : null;
       default:
         return null;
     }

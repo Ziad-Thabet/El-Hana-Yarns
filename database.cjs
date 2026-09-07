@@ -27,6 +27,7 @@ const { createAuthDB } = require("./db/repositories/auth.cjs");
 const { createDriversDB } = require("./db/repositories/drivers.cjs");
 const { createOnlineOrdersDB } = require("./db/repositories/onlineOrders.cjs");
 const { createReturnsDB } = require("./db/repositories/returns.cjs");
+const { createSettingsDB } = require("./db/repositories/settings.cjs");
 
 const isDev = !app.isPackaged;
 
@@ -82,10 +83,31 @@ function initDatabase() {
   // that cannot be migrated must not be served.
   runMigrations(db);
 
+  // Settings exist only after the migration above, so the singletons that were
+  // constructed at require time are configured here.
+  applyRuntimeSettings();
+
   console.log(
     `✅ Database connected (better-sqlite3, schema v${getSchemaVersion(db)}): ${DB_PATH}`,
   );
   return db;
+}
+
+/**
+ * Pushes settings into the modules that are required before the database opens
+ * and therefore cannot read them for themselves.
+ */
+function applyRuntimeSettings() {
+  try {
+    const config = settingsDB.runtimeConfig();
+    require("./session-manager.cjs").configure(config);
+    require("./rate-limiter.cjs").configure(config);
+    backups.configure(config);
+    return config;
+  } catch (err) {
+    console.error("❌ applyRuntimeSettings failed:", err.message);
+    return null;
+  }
 }
 
 function closeDatabase() {
@@ -928,9 +950,13 @@ function migrateLegacyDates() {
   migrateTx();
 }
 
+// Instantiated first: several repositories take it as a dependency. Its
+// cache is lazy, so it does not mind that the table does not exist yet.
+const settingsDB = createSettingsDB(() => db);
+
 const categoriesDB = createCategoriesDB(() => db);
 
-const productsDB = createProductsDB(() => db);
+const productsDB = createProductsDB(() => db, settingsDB);
 
 const authDB = createAuthDB(() => db);
 
@@ -948,9 +974,10 @@ const reportsDB = createReportsDB(
   productsDB,
   debtsDB,
   () => employeesDB,
+  settingsDB,
 );
 
-const shiftsDB = createShiftsDB(() => db);
+const shiftsDB = createShiftsDB(() => db, settingsDB);
 const ensureActiveShift = createEnsureActiveShift(shiftsDB);
 function globalAutoCloseShifts() {
   try {
@@ -964,7 +991,7 @@ const employeesDB = createEmployeesDB(() => db, shiftsDB);
 
 const expensesDB = createExpensesDB(() => db, employeesDB);
 
-const alertsDB = createAlertsDB(() => db, shiftsDB);
+const alertsDB = createAlertsDB(() => db, shiftsDB, settingsDB);
 
 const driversDB = createDriversDB(() => db);
 
@@ -996,4 +1023,6 @@ module.exports = {
   driversDB,
   onlineOrdersDB,
   returnsDB,
+  settingsDB,
+  applyRuntimeSettings,
 };

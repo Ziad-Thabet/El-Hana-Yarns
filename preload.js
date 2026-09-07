@@ -554,6 +554,23 @@ contextBridge.exposeInMainWorld("api", {
     },
   },
 
+  settings: {
+    getClient: () => secureInvoke("settings:getClient"),
+    getAll: () => secureInvoke("settings:getAll"),
+    update: (values) => {
+      if (!values || typeof values !== "object" || Array.isArray(values)) {
+        return Promise.reject(new Error("Invalid settings payload"));
+      }
+      return secureInvoke("settings:update", values);
+    },
+    reset: (key) => {
+      if (typeof key !== "string") {
+        return Promise.reject(new Error("Invalid setting key"));
+      }
+      return secureInvoke("settings:reset", key);
+    },
+  },
+
   backup: {
     list: () => secureInvoke("backup:list"),
     create: () => secureInvoke("backup:create"),

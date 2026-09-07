@@ -158,3 +158,11 @@ export type {
   SaleReturnItem,
   SaleReturnResult,
 } from "@/features/returns/types";
+
+export type {
+  SettingType,
+  SettingGroup,
+  SettingValue,
+  SettingEntry,
+  ClientSettings,
+} from "@/features/settings/types";

@@ -25,6 +25,7 @@ export const strings = {
     employees: "الموظفون",
     expenses: "المصروفات",
     backups: "النسخ الاحتياطي",
+    settings: "الإعدادات",
   },
 
   auth: {
@@ -590,6 +591,59 @@ export const strings = {
     returnedBy: "بواسطة",
     statusBadgeFull: "مرتجعة بالكامل",
     statusBadgePartial: "مرتجعة جزئياً",
+  },
+
+  settings: {
+    title: "الإعدادات",
+    subtitle:
+      "القيم اللي البرنامج بيشتغل بيها. أي قيمة تسيبها زي ما هي بتفضل على الوضع الافتراضي.",
+    save: "حفظ",
+    saveCount: "حفظ {count} تعديل",
+    saving: "بيتم الحفظ…",
+    saved: "تم حفظ الإعدادات",
+    saveFailed: "فشل حفظ الإعدادات",
+    customised: "معدّل",
+    resetToDefault: "رجوع للافتراضي",
+    resetDone: "تم الرجوع للقيمة الافتراضية",
+    defaultIs: "الافتراضي: {value}",
+    groups: {
+      shop: "بيانات المحل",
+      receipt: "الفاتورة المطبوعة",
+      inventory: "المخزون",
+      shift: "الشيفتات",
+      alerts: "التنبيهات",
+      security: "الأمان",
+      backup: "النسخ الاحتياطي",
+      barcode: "الباركود",
+    },
+    labels: {
+      "shop.name": "اسم المحل",
+      "shop.tagline": "الوصف تحت الاسم",
+      "shop.address": "العنوان",
+      "shop.phone": "رقم التليفون",
+      "receipt.widthMm": "عرض ورق الفاتورة (مم)",
+      "receipt.footerNote": "ملاحظة أسفل الفاتورة",
+      "inventory.lowStockThreshold": "حد المخزون المنخفض",
+      "inventory.outOfStockThreshold": "حد تنبيه نفاد المخزون",
+      "shift.staleHours": "أقصى مدة للشيفت المفتوح (ساعة)",
+      "alerts.overdueInvoiceDays": "فاتورة الشراء تعتبر متأخرة بعد (يوم)",
+      "alerts.checkIntervalMinutes": "فحص التنبيهات كل (دقيقة)",
+      "security.sessionTimeoutHours": "مدة الجلسة (ساعة)",
+      "security.maxLoginAttempts": "عدد محاولات الدخول قبل الحظر",
+      "security.lockoutMinutes": "مدة الحظر (دقيقة)",
+      "backup.retentionCount": "عدد النسخ المحفوظة",
+      "backup.intervalHours": "نسخة احتياطية كل (ساعة)",
+      "barcode.internalPrefix": "بادئة الباركود الداخلي",
+    },
+    hints: {
+      "inventory.lowStockThreshold":
+        "المنتج اللي كميته أقل من الرقم ده بيظهر كمخزون منخفض في التقارير",
+      "inventory.outOfStockThreshold":
+        "التنبيه بينزل لما الكمية تبقى أقل من أو تساوي الرقم ده",
+      "shift.staleHours":
+        "الشيفت اللي مفيش عليه حركة المدة دي بيتقفل تلقائياً",
+      "receipt.widthMm": "بيتطبق على الطباعة والمعاينة مع بعض",
+    },
   },
 
   drivers: {

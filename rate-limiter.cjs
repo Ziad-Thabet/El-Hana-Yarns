@@ -7,6 +7,16 @@ class RateLimiter {
     this.lockoutDuration = 5 * 60 * 1000; // 5 minutes in milliseconds
   }
   
+  /** Applies configured values; ignores anything missing or non-positive. */
+  configure({ maxAttempts, lockoutDurationMs } = {}) {
+    if (Number.isFinite(maxAttempts) && maxAttempts > 0) {
+      this.maxAttempts = maxAttempts;
+    }
+    if (Number.isFinite(lockoutDurationMs) && lockoutDurationMs > 0) {
+      this.lockoutDuration = lockoutDurationMs;
+    }
+  }
+
   isLocked(username) {
     if (!username) return false;
     const record = this.attempts.get(username);
