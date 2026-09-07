@@ -79,7 +79,7 @@ declare global {
       products: {
         getAll: () => Promise<ApiResponse<Product[]>>;
         getById: (id: string) => Promise<ApiResponse<Product>>;
-        getByBarcode: (barcode: string) => Promise<ApiResponse<Product>>;
+        getByBarcode: (barcode: string) => Promise<ApiResponse<Product | null>>;
         generateBarcode: () => Promise<ApiResponse<string>>;
         create: (data: Omit<Product, "id">) => Promise<ApiResponse<Product>>;
         update: (

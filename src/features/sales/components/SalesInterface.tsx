@@ -138,18 +138,29 @@ const SalesInterface = ({
   };
   const handleBarcodeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    let product = products.find((p) => p.barcode === barcode);
+    const scanned = barcode.trim();
+    if (!scanned) return;
+    const notFound = () => {
+      toast({
+        title: strings.sales.productNotFound,
+        description: strings.sales.productNotFoundDesc,
+        variant: "destructive",
+      });
+      setBarcode("");
+    };
+    let product = products.find((p) => p.barcode === scanned) ?? null;
     if (!product) {
       try {
-        product = await productsApi.getByBarcode(barcode);
+        // Returns null (not a rejection) when the barcode is unknown.
+        product = await productsApi.getByBarcode(scanned);
       } catch {
-        toast({
-          title: strings.sales.productNotFound,
-          description: strings.sales.productNotFoundDesc,
-          variant: "destructive",
-        });
+        notFound();
         return;
       }
+    }
+    if (!product) {
+      notFound();
+      return;
     }
     handleAddToCart(product);
     setBarcode("");
