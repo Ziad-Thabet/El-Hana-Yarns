@@ -651,6 +651,18 @@ export const strings = {
     },
   },
 
+  endOfDay: {
+    title: "End of day report",
+    subtitle:
+      "An Excel file covering sales, returns, stock movement, debts, expenses and shifts for the selected day.",
+    from: "From",
+    to: "To",
+    exportButton: "Export Excel",
+    exporting: "Exporting...",
+    exported: "Report exported",
+    exportedTo: "Saved to {path}",
+    exportFailed: "Could not export the report",
+  },
   audit: {
     title: "Activity log",
     subtitle:
