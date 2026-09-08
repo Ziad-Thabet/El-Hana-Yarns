@@ -506,6 +506,64 @@ const MIGRATIONS = [
       }
     },
   },
+  {
+    version: 6,
+    name: "payment-methods",
+    up(db) {
+      // `code` matches payment_records.method exactly — that column is the
+      // source of truth for what was actually collected, and shift totals are
+      // derived from it. These tables describe and denormalise it; they do not
+      // replace it.
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS payment_methods (
+          id            TEXT PRIMARY KEY,
+          code          TEXT NOT NULL UNIQUE,
+          name_ar       TEXT NOT NULL,
+          name_en       TEXT NOT NULL,
+          kind          TEXT NOT NULL DEFAULT 'digital',
+          needs_receipt INTEGER NOT NULL DEFAULT 0,
+          sort_order    INTEGER NOT NULL DEFAULT 0,
+          is_active     INTEGER NOT NULL DEFAULT 1,
+          is_system     INTEGER NOT NULL DEFAULT 0
+        );
+
+        CREATE TABLE IF NOT EXISTS shift_totals (
+          shift_id  TEXT NOT NULL,
+          method_id TEXT NOT NULL,
+          amount    REAL NOT NULL DEFAULT 0,
+          PRIMARY KEY (shift_id, method_id),
+          FOREIGN KEY (shift_id)  REFERENCES shifts(id)          ON DELETE CASCADE,
+          FOREIGN KEY (method_id) REFERENCES payment_methods(id) ON DELETE RESTRICT
+        );
+        CREATE INDEX IF NOT EXISTS idx_shift_totals_method ON shift_totals(method_id);
+      `);
+
+      const seed = db.prepare(
+        `INSERT OR IGNORE INTO payment_methods
+           (id, code, name_ar, name_en, kind, needs_receipt, sort_order, is_active, is_system)
+         VALUES (?,?,?,?,?,?,?,1,1)`,
+      );
+      // `kind` drives behaviour rather than decoration: change is only ever
+      // given from a cash method, and non-cash payments prompt for a receipt.
+      seed.run("pm_cash", "cash", "نقدي", "Cash", "cash", 0, 0);
+      seed.run("pm_vodafone", "vodafone", "فودافون كاش", "Vodafone Cash", "digital", 1, 1);
+      seed.run("pm_instapay", "instapay", "إنستاباي", "InstaPay", "digital", 1, 2);
+
+      // Backfill from the three legacy columns. They stay authoritative for
+      // reads until the two have been reconciled on real data over a full
+      // reporting period, so this is a parallel copy rather than a cutover.
+      for (const [methodId, column] of [
+        ["pm_cash", "total_cash"],
+        ["pm_vodafone", "total_vodafone"],
+        ["pm_instapay", "total_instapay"],
+      ]) {
+        db.prepare(
+          `INSERT OR IGNORE INTO shift_totals (shift_id, method_id, amount)
+           SELECT id, ?, COALESCE(${column}, 0) FROM shifts`,
+        ).run(methodId);
+      }
+    },
+  },
 ];
 
 function getSchemaVersion(db) {

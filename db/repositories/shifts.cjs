@@ -3,6 +3,9 @@ const { formatDateYMD } = require("../../shared/dateRules.cjs");
 const { buildDateFilter } = require("../helpers/dateFilter.cjs");
 const { hydrateSaleInvoices } = require("./sales.cjs");
 const { round } = require("../helpers/numbers.cjs");
+const {
+  LEGACY_KEY_BY_CODE,
+} = require("./paymentMethods.cjs");
 function mapShift(row) {
   if (!row) return null;
   return {
@@ -19,7 +22,7 @@ function mapShift(row) {
   };
 }
 const STALE_SHIFT_HOURS = 10;
-function createShiftsDB(getDb, settingsDB = null) {
+function createShiftsDB(getDb, settingsDB = null, paymentMethodsDB = null) {
   const staleHours = () =>
     settingsDB?.getNumber("shift.staleHours") ?? STALE_SHIFT_HOURS;
   function getOpenShift(userId, date) {
@@ -48,14 +51,23 @@ function createShiftsDB(getDb, settingsDB = null) {
     // invoice, so they subtract here without any special casing — money leaving
     // the drawer today is counted against today's shift even when the sale it
     // reverses belongs to an earlier one.
-    const totals = { cash: 0, vodafone_cash: 0, instapay: 0 };
+    // Keyed by the method code exactly as it appears in payment_records, so a
+    // method the shop adds later needs no code change here.
+    const byCode = {};
     for (const row of rows) {
-      const method = (row.method ?? "").toLowerCase();
-      if (method === "cash") totals.cash = round(row.total);
-      else if (method === "vodafone") totals.vodafone_cash = round(row.total);
-      else if (method === "instapay") totals.instapay = round(row.total);
+      const code = (row.method ?? "").toLowerCase();
+      if (!code) continue;
+      byCode[code] = round((byCode[code] ?? 0) + row.total);
     }
-    return totals;
+
+    // The legacy triplet is DERIVED from byCode rather than computed
+    // separately. Two independent calculations of the same figure is precisely
+    // how they drift apart; this way they cannot disagree by construction.
+    const legacy = { cash: 0, vodafone_cash: 0, instapay: 0 };
+    for (const [code, key] of Object.entries(LEGACY_KEY_BY_CODE)) {
+      legacy[key] = byCode[code] ?? 0;
+    }
+    return { ...legacy, byCode };
   }
   function calcShiftInvoiceCount(shiftId) {
     const db = getDb();
@@ -66,6 +78,26 @@ function createShiftsDB(getDb, settingsDB = null) {
       .get(shiftId);
     return row?.cnt ?? 0;
   }
+  /** Mirrors the totals into shift_totals alongside the legacy columns. */
+  function writeShiftTotals(db, shiftId, byCode) {
+    if (!paymentMethodsDB) return;
+    const upsert = db.prepare(
+      `INSERT INTO shift_totals (shift_id, method_id, amount)
+       VALUES (?,?,?)
+       ON CONFLICT(shift_id, method_id) DO UPDATE SET amount=excluded.amount`,
+    );
+    for (const [code, amount] of Object.entries(byCode)) {
+      const methodId = paymentMethodsDB.idForCode(code);
+      // A code with no matching method row is skipped rather than guessed at:
+      // the legacy columns still carry the figure, so nothing is lost.
+      if (!methodId) {
+        console.warn(`[Shifts] no payment method registered for "${code}"`);
+        continue;
+      }
+      upsert.run(shiftId, methodId, amount);
+    }
+  }
+
   /**
    * The single place a shift is closed.
    *
@@ -77,6 +109,7 @@ function createShiftsDB(getDb, settingsDB = null) {
   function closeShift(db, shiftId, endedAt) {
     const totals = calcShiftTotals(shiftId);
     const count = calcShiftInvoiceCount(shiftId);
+    writeShiftTotals(db, shiftId, totals.byCode);
     db.prepare(
       `UPDATE shifts SET
          status='closed',
@@ -227,6 +260,21 @@ function createShiftsDB(getDb, settingsDB = null) {
       const totals = calcShiftTotals(shiftId);
       const count = calcShiftInvoiceCount(shiftId);
       return { ...totals, totalInvoices: count };
+    },
+    /** What shift_totals holds, for reconciling it against the legacy columns. */
+    getStoredTotals(shiftId) {
+      const db = getDb();
+      const rows = db
+        .prepare(
+          `SELECT pm.code, st.amount
+             FROM shift_totals st
+             JOIN payment_methods pm ON pm.id = st.method_id
+            WHERE st.shift_id = ?`,
+        )
+        .all(shiftId);
+      const byCode = {};
+      for (const row of rows) byCode[row.code] = row.amount;
+      return byCode;
     },
   };
   return shiftsDB;
