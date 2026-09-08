@@ -17,6 +17,9 @@ export function InvoiceRow({
 }) {
   const { methodLabel, isFullyOnDebt, isPartialDebt } =
     getInvoicePaymentBadgeInfo(invoice);
+  const returnStatus = invoice.returnStatus ?? "none";
+  const refunded = invoice.refundedAmount ?? 0;
+  const net = invoice.netTotal ?? invoice.total;
   return (
     <div
       onClick={onClick}
@@ -38,6 +41,20 @@ export function InvoiceRow({
           {isFullyOnDebt && (
             <Badge variant="destructive" className="text-[11px] px-2 shrink-0">
               {strings.sales.fullDebtBadge}
+            </Badge>
+          )}
+          {returnStatus === "full" && (
+            <Badge variant="destructive" className="text-[11px] px-2 shrink-0">
+              {strings.returns.statusBadgeFull}
+            </Badge>
+          )}
+          {returnStatus === "partial" && (
+            <Badge
+              variant="outline"
+              className="text-[11px] px-2 shrink-0 border-orange-500/50 text-orange-500"
+            >
+              {strings.returns.statusBadgePartial}
+              {refunded > 0 && ` · ${Money.from(refunded).toString()}`}
             </Badge>
           )}
           {isPartialDebt && (
@@ -70,9 +87,20 @@ export function InvoiceRow({
         </div>
       </div>
       <div className="flex items-center gap-3 shrink-0">
-        <p className="text-base font-bold text-primary">
-          {Money.from(invoice.total).toString()}
-        </p>
+        {refunded > 0 ? (
+          <div className="text-end leading-tight">
+            <p className="text-base font-bold text-primary">
+              {Money.from(net).toString()}
+            </p>
+            <p className="text-[11px] text-muted-foreground line-through">
+              {Money.from(invoice.total).toString()}
+            </p>
+          </div>
+        ) : (
+          <p className="text-base font-bold text-primary">
+            {Money.from(invoice.total).toString()}
+          </p>
+        )}
         <Button
           size="sm"
           variant="outline"

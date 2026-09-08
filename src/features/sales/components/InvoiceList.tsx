@@ -32,8 +32,19 @@ export function InvoiceList({
       ),
     [invoices, search],
   );
-  const totalRevenue = useMemo(
-    () => invoices.reduce((s, inv) => s + inv.total, 0),
+  // Returned money never counted as revenue, so the header shows what the
+  // shop actually kept, with the gross beside it when the two differ.
+  const { totalRevenue, totalRefunded } = useMemo(
+    () => ({
+      totalRevenue: invoices.reduce(
+        (sum, inv) => sum + (inv.netTotal ?? inv.total),
+        0,
+      ),
+      totalRefunded: invoices.reduce(
+        (sum, inv) => sum + (inv.refundedAmount ?? 0),
+        0,
+      ),
+    }),
     [invoices],
   );
   if (loading) {
@@ -62,6 +73,14 @@ export function InvoiceList({
           <span className="font-semibold text-foreground">
             {Money.from(totalRevenue).toString()}
           </span>
+          {totalRefunded > 0 && (
+            <span className="ms-1.5 text-[11px] text-orange-500">
+              {strings.salesInvoices.afterReturns.replace(
+                "{amount}",
+                Money.from(totalRefunded).toString(),
+              )}
+            </span>
+          )}
           {" · "}
           {filtered.length} {strings.salesInvoices.invoiceUnit}
         </div>

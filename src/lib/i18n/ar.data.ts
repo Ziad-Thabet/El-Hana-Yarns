@@ -345,6 +345,7 @@ export const strings = {
     invoiceCount: "عدد الفواتير",
     searchPlaceholder: "ابحث برقم الفاتورة...",
     invoiceUnit: "فاتورة",
+    afterReturns: "(مرتجع {amount})",
     currentShiftInvoices: "فواتير الشيفت الحالي",
     allSalesTitle: "كل المبيعات",
     sourceFilterAll: "الكل",
