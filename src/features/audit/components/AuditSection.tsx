@@ -1,5 +1,11 @@
-import { useState } from "react";
-import { ChevronDown, ChevronUp, Loader2, ScrollText } from "lucide-react";
+import { Fragment, useState } from "react";
+import {
+  ArrowLeft,
+  ChevronDown,
+  ChevronUp,
+  Loader2,
+  ScrollText,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +25,8 @@ import { useAuditFilterOptions, useAuditLog } from "../hooks";
 
 const PAGE_SIZE = 50;
 const ANY = "__any__";
+// Written by the audit serialiser in place of a password.
+const REDACTED = "[redacted]";
 
 function statusVariant(status: AuditStatus) {
   if (status === "denied") return "destructive" as const;
@@ -41,19 +49,143 @@ function formatWhen(iso: string) {
   return Number.isNaN(parsed.getTime()) ? iso : parsed.toLocaleString();
 }
 
+type Change = { from: unknown; to: unknown };
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/** A `{ from, to }` pair contributed by a repository, not an ordinary field. */
+function isChange(value: unknown): value is Change {
+  return isPlainObject(value) && "from" in value && "to" in value;
+}
+
+function fieldLabel(key: string) {
+  const labels = strings.audit.fields as Record<string, string>;
+  return labels[key] ?? key;
+}
+
+/**
+ * The log is read by the shop owner, not by a developer, so values are shown
+ * the way they appear elsewhere in the app — never as raw JSON.
+ */
+function formatValue(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "—";
+  if (value === REDACTED) return strings.audit.redacted;
+  if (typeof value === "boolean")
+    return value ? strings.audit.yes : strings.audit.no;
+  if (typeof value === "number") return value.toLocaleString("ar-EG");
+  return String(value);
+}
+
+/** Long base64 image payloads are noise; say what they are and move on. */
+function isImagePayload(value: unknown) {
+  return typeof value === "string" && value.startsWith("data:");
+}
+
+function FieldValue({ value }: { value: unknown }) {
+  if (isImagePayload(value)) {
+    return (
+      <span className="text-muted-foreground">{strings.audit.imageValue}</span>
+    );
+  }
+  if (isChange(value)) {
+    return (
+      <span className="inline-flex flex-wrap items-center gap-1.5">
+        <span className="text-muted-foreground line-through">
+          {formatValue(value.from)}
+        </span>
+        <ArrowLeft className="h-3 w-3 shrink-0 text-muted-foreground" />
+        <span className="font-medium">{formatValue(value.to)}</span>
+      </span>
+    );
+  }
+  if (Array.isArray(value)) {
+    if (value.length === 0) return <span>—</span>;
+    return (
+      <div className="space-y-1.5">
+        {value.map((item, i) => (
+          <div
+            key={i}
+            className="rounded-md border border-border/60 bg-background/60 px-2.5 py-1.5"
+          >
+            <p className={cn(typography.caption, "mb-1")}>
+              {strings.audit.item.replace("{n}", String(i + 1))}
+            </p>
+            <FieldValue value={item} />
+          </div>
+        ))}
+      </div>
+    );
+  }
+  if (isPlainObject(value)) return <FieldList data={value} />;
+  return <span>{formatValue(value)}</span>;
+}
+
+function FieldList({ data }: { data: Record<string, unknown> }) {
+  const keys = Object.keys(data);
+  if (keys.length === 0) {
+    return (
+      <p className={typography.caption}>{strings.audit.noDetails}</p>
+    );
+  }
+  return (
+    <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
+      {keys.map((key) => (
+        <div key={key} className="flex flex-wrap items-baseline gap-2">
+          <dt className={cn(typography.caption, "shrink-0")}>
+            {fieldLabel(key)}
+          </dt>
+          <dd className="min-w-0 text-[13px]">
+            <FieldValue value={data[key]} />
+          </dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
 function DetailRow({ entry }: { entry: AuditEntry }) {
+  const detail = isPlainObject(entry.detail) ? entry.detail : null;
+  const payload = detail && isPlainObject(detail.payload) ? detail.payload : null;
+  const changes = detail && isPlainObject(detail.changes) ? detail.changes : null;
+  // A payload that is a bare value (an id string, say) still deserves a row.
+  const bare =
+    detail && !payload && detail.payload !== undefined && detail.payload !== null
+      ? detail.payload
+      : null;
+
   return (
     <tr className="bg-muted/30">
-      <td colSpan={5} className="px-4 py-3">
-        {entry.error && (
-          <p className="mb-2 text-xs text-destructive">{entry.error}</p>
-        )}
-        <pre
-          dir="ltr"
-          className="max-h-64 overflow-auto rounded-md bg-background p-3 text-[11px] leading-relaxed"
-        >
-          {JSON.stringify(entry.detail, null, 2)}
-        </pre>
+      <td colSpan={5} className="px-4 py-4">
+        <div className="space-y-4">
+          {entry.error && (
+            <p className="text-xs text-destructive">{entry.error}</p>
+          )}
+          {changes && (
+            <section className="space-y-2">
+              <h4 className="text-xs font-semibold">
+                {strings.audit.changesTitle}
+              </h4>
+              <FieldList data={changes} />
+            </section>
+          )}
+          {(payload || bare !== null) && (
+            <section className="space-y-2">
+              <h4 className="text-xs font-semibold">
+                {strings.audit.detailsTitle}
+              </h4>
+              {payload ? (
+                <FieldList data={payload} />
+              ) : (
+                <p className="text-[13px]">{formatValue(bare)}</p>
+              )}
+            </section>
+          )}
+          {!changes && !payload && bare === null && !entry.error && (
+            <p className={typography.caption}>{strings.audit.noDetails}</p>
+          )}
+        </div>
       </td>
     </tr>
   );
@@ -198,9 +330,8 @@ export function AuditSection() {
                 </thead>
                 <tbody>
                   {entries.map((entry) => (
-                    <>
+                    <Fragment key={entry.id}>
                       <tr
-                        key={entry.id}
                         className="cursor-pointer border-b border-border/50 last:border-0 hover:bg-muted/40"
                         onClick={() =>
                           setExpanded(expanded === entry.id ? null : entry.id)
@@ -231,9 +362,9 @@ export function AuditSection() {
                         </td>
                       </tr>
                       {expanded === entry.id && (
-                        <DetailRow key={`${entry.id}-detail`} entry={entry} />
+                        <DetailRow entry={entry} />
                       )}
-                    </>
+                    </Fragment>
                   ))}
                 </tbody>
               </table>
