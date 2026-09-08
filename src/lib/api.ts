@@ -372,3 +372,14 @@ export const auditApi = {
   getFilterOptions: () =>
     call<AuditFilterOptions>(() => window.api.audit.getFilterOptions()),
 };
+// END OF DAY
+export const endOfDayApi = {
+  export: (from: string, to?: string) =>
+    call<{
+      cancelled: boolean;
+      filePath: string | null;
+      rowCounts?: Record<string, number>;
+    }>(() => window.api.endOfDay.export(from, to)),
+  preview: (from: string, to?: string) =>
+    call<unknown>(() => window.api.endOfDay.preview(from, to)),
+};

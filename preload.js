@@ -554,6 +554,21 @@ contextBridge.exposeInMainWorld("api", {
     },
   },
 
+  endOfDay: {
+    preview: (from, to) => {
+      if (typeof from !== "string") {
+        return Promise.reject(new Error("Invalid report date"));
+      }
+      return secureInvoke("endOfDay:preview", { from, to });
+    },
+    export: (from, to) => {
+      if (typeof from !== "string") {
+        return Promise.reject(new Error("Invalid report date"));
+      }
+      return secureInvoke("endOfDay:export", { from, to });
+    },
+  },
+
   audit: {
     query: (filters) => secureInvoke("audit:query", filters ?? {}),
     getFilterOptions: () => secureInvoke("audit:getFilterOptions"),

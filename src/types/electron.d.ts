@@ -328,6 +328,20 @@ declare global {
         ) => Promise<ApiResponse<SaleReturnResult>>;
       };
 
+      endOfDay: {
+        preview: (from: string, to?: string) => Promise<ApiResponse<unknown>>;
+        export: (
+          from: string,
+          to?: string,
+        ) => Promise<
+          ApiResponse<{
+            cancelled: boolean;
+            filePath: string | null;
+            rowCounts?: Record<string, number>;
+          }>
+        >;
+      };
+
       audit: {
         query: (
           filters?: AuditQuery,

@@ -19,6 +19,7 @@ import { InventoryReportView } from "./InventoryReportView";
 import { DebtsReportView } from "./DebtsReportView";
 import { OnlineOrdersReportView } from "./OnlineOrdersReportView";
 import { strings } from "@/lib/i18n/ar";
+import { EndOfDayExportCard } from "./EndOfDayExportCard";
 type AnyReport = ReportResult;
 interface ReportsSectionProps {
   isAdmin: boolean;
@@ -214,6 +215,7 @@ const ReportsSection = ({ isAdmin }: ReportsSectionProps) => {
           </CardContent>
         </Card>
       )}
+      {isAdmin && <EndOfDayExportCard />}
       {isAdmin && renderContent()}
     </div>
   );
