@@ -105,6 +105,9 @@ const CHANNEL_PERMISSIONS = {
   "settings:getAll": "admin",
   "settings:update": "admin",
   "settings:reset": "admin",
+  // End-of-day export — reads the whole day's figures.
+  "endOfDay:preview": "admin",
+  "endOfDay:export": "admin",
   // Audit trail — read only; the log itself is append-only.
   "audit:query": "admin",
   "audit:getFilterOptions": "admin",
@@ -211,6 +214,8 @@ const CHANNEL_CAPABILITY = {
   "debts:addPayment": "debts.use",
   "debts:addBulkPayment": "debts.use",
   "reports:generate": "reports.manage",
+  "endOfDay:preview": "reports.manage",
+  "endOfDay:export": "reports.manage",
   "shifts:getActive": "shifts.use",
   "shifts:getByUserAndDate": "shifts.manage",
   "shifts:getOrCreate": "shifts.use",

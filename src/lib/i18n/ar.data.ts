@@ -647,6 +647,18 @@ export const strings = {
     },
   },
 
+  endOfDay: {
+    title: "تقرير نهاية اليوم",
+    subtitle:
+      "ملف إكسل يجمع المبيعات والمرتجعات وحركة المخزون والديون والمصروفات والورديات لليوم المحدد.",
+    from: "من",
+    to: "إلى",
+    exportButton: "تصدير إكسل",
+    exporting: "جارٍ التصدير...",
+    exported: "تم تصدير التقرير",
+    exportedTo: "تم الحفظ في {path}",
+    exportFailed: "تعذّر تصدير التقرير",
+  },
   audit: {
     title: "سجل العمليات",
     subtitle:
