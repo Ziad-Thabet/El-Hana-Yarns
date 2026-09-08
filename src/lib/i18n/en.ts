@@ -649,6 +649,8 @@ export const strings = {
       "inventory.lowStockThreshold": "Low-stock threshold",
       "inventory.outOfStockThreshold": "Out-of-stock alert threshold",
       "shift.staleHours": "Max open shift length (hours)",
+      "shift.openingFloat": "Opening cash float",
+      "shift.varianceNoteThreshold": "Difference allowed without a reason",
       "alerts.overdueInvoiceDays": "Purchase invoice overdue after (days)",
       "alerts.checkIntervalMinutes": "Check alerts every (minutes)",
       "security.sessionTimeoutHours": "Session length (hours)",
@@ -659,6 +661,10 @@ export const strings = {
       "barcode.internalPrefix": "Internal barcode prefix",
     },
     hints: {
+      "shift.openingFloat":
+        "What the drawer starts each day with. Stamped onto a shift when it opens, so changing it now does not affect shifts already counted",
+      "shift.varianceNoteThreshold":
+        "When the counted drawer differs from the expected total by more than this, closing asks for an explanation",
       "inventory.lowStockThreshold":
         "Products below this quantity show as low stock in reports",
       "inventory.outOfStockThreshold":

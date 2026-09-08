@@ -13,6 +13,8 @@ const CLIENT_DEFAULTS: ClientSettings = {
   "receipt.footerNote": "",
   "inventory.lowStockThreshold": 10,
   "shift.staleHours": 10,
+  "shift.openingFloat": 0,
+  "shift.varianceNoteThreshold": 20,
 };
 
 /**

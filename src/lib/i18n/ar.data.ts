@@ -645,6 +645,8 @@ export const strings = {
       "inventory.lowStockThreshold": "حد المخزون المنخفض",
       "inventory.outOfStockThreshold": "حد تنبيه نفاد المخزون",
       "shift.staleHours": "أقصى مدة للشيفت المفتوح (ساعة)",
+      "shift.openingFloat": "رصيد بداية اليوم في الدرج",
+      "shift.varianceNoteThreshold": "أقصى فرق مسموح بيه من غير سبب",
       "alerts.overdueInvoiceDays": "فاتورة الشراء تعتبر متأخرة بعد (يوم)",
       "alerts.checkIntervalMinutes": "فحص التنبيهات كل (دقيقة)",
       "security.sessionTimeoutHours": "مدة الجلسة (ساعة)",
@@ -661,6 +663,10 @@ export const strings = {
         "التنبيه بينزل لما الكمية تبقى أقل من أو تساوي الرقم ده",
       "shift.staleHours":
         "الشيفت اللي مفيش عليه حركة المدة دي بيتقفل تلقائياً",
+      "shift.openingFloat":
+        "المبلغ اللي بيبدأ بيه الدرج كل يوم. بيتسجل على الوردية وقت فتحها، فتغييره دلوقتي مش بيأثر على ورديات قديمة",
+      "shift.varianceNoteThreshold":
+        "لو الفرق بين المعدود والمتوقع أكبر من الرقم ده، البرنامج هيطلب سبب قبل إقفال الوردية",
       "receipt.widthMm": "بيتطبق على الطباعة والمعاينة مع بعض",
     },
   },
