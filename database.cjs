@@ -30,6 +30,9 @@ const { createReturnsDB } = require("./db/repositories/returns.cjs");
 const { createSettingsDB } = require("./db/repositories/settings.cjs");
 const { createAuditDB } = require("./db/repositories/audit.cjs");
 const { createRolesDB } = require("./db/repositories/roles.cjs");
+const {
+  createPaymentMethodsDB,
+} = require("./db/repositories/paymentMethods.cjs");
 
 const isDev = !app.isPackaged;
 
@@ -957,6 +960,7 @@ function migrateLegacyDates() {
 const settingsDB = createSettingsDB(() => db);
 const auditDB = createAuditDB(() => db);
 const rolesDB = createRolesDB(() => db);
+const paymentMethodsDB = createPaymentMethodsDB(() => db);
 
 const categoriesDB = createCategoriesDB(() => db);
 
@@ -981,7 +985,7 @@ const reportsDB = createReportsDB(
   settingsDB,
 );
 
-const shiftsDB = createShiftsDB(() => db, settingsDB);
+const shiftsDB = createShiftsDB(() => db, settingsDB, paymentMethodsDB);
 const ensureActiveShift = createEnsureActiveShift(shiftsDB);
 function globalAutoCloseShifts() {
   try {
@@ -1030,5 +1034,6 @@ module.exports = {
   settingsDB,
   auditDB,
   rolesDB,
+  paymentMethodsDB,
   applyRuntimeSettings,
 };
