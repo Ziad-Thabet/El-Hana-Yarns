@@ -32,18 +32,30 @@ You can expect an initial response within a few days. This is a solo-
 maintained project, so response time isn't guaranteed on an SLA, but
 security reports are prioritized over feature work.
 
-## Notes on this repository's data
+## How the application is defended
 
-- No real client data, credentials, or `.db` files are ever committed —
-  enforced via `.gitignore` and manually verified before every push
-  (see `GIT_WORKFLOW.md`).
-- Passwords are hashed with bcrypt; sessions are held in memory, not
-  persisted to disk.
-- IPC channel access is role-gated through `ipc-channels.cjs` as the
-  single source of truth for permissions.
+- **The renderer is not trusted.** `contextIsolation` and `sandbox` are on,
+  `nodeIntegration` is off, and the only surface it can reach is the
+  enumerated API in `preload.js`.
+- **Every IPC call is authorised against the caller's own session,** resolved
+  in the main process. A session id or actor planted in a payload is ignored,
+  so the renderer cannot claim an identity it does not have.
+- **Permissions are capabilities held by roles,** declared once in
+  `ipc-channels.cjs` and stored as rows. A database whose roles table is empty
+  still admits the owner, so a partial migration cannot lock a shop out of its
+  own till.
+- **Passwords are hashed with bcrypt** with per-hash salts. Sessions live in
+  memory, expire, and are destroyed when a user is deactivated. Repeated failed
+  logins are rate-limited and then locked out.
+- **The activity log is append-only,** enforced by database triggers rather
+  than by convention, and password fields are stripped before a record is
+  written.
+- **No real client data, credentials, or `.db` files are ever committed.**
+  `.gitignore` covers `.db`, `.sqlite` and `userdata/`, and the test suite
+  builds its own fixture rather than depending on a real database.
 
-If you find an actual instance of committed secrets or client data in
-this repository's history, please report it immediately via the private
-channel above rather than filing a public issue — it will be treated as
-a P0 and the history will be rewritten (see the remediation protocol in
-`GIT_WORKFLOW.md`).
+If you find an actual instance of committed secrets or client data in this
+repository's history, please report it immediately via the private channel
+above rather than filing a public issue. It is treated as the highest
+priority: the credential is rotated first, then the history is rewritten and
+force-pushed.

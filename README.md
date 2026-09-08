@@ -15,9 +15,11 @@
 
 </div>
 
-> **A desktop-native, offline-first POS and inventory system purpose-built for a yarn
-> retail business** — barcode-driven sales, Arabic/English bilingual UI, customer debt
-> ledgers, and full financial reporting, running entirely on the shop's own machine.
+> **A desktop-native, offline-first POS and inventory system built for a yarn
+> retail business** — barcode-driven sales, an Arabic-first bilingual interface,
+> customer debt ledgers, returns, shift accounting and financial reporting,
+> running entirely on the shop's own machine with no server and no internet
+> dependency.
 
 ---
 
@@ -39,6 +41,7 @@
 - [Tech Stack](#-tech-stack)
 - [Prerequisites](#-prerequisites)
 - [Local Development](#-local-development)
+- [Tests](#-tests)
 - [Production Build](#-production-build)
 - [Architecture](#-architecture)
 - [Security Posture](#-security-posture)
@@ -48,37 +51,80 @@
 
 ## ✨ Core Features
 
-- 🔖 **Barcode-driven sales terminal** — fast checkout flow with cart, quantity, and payment-split editing
-- 👥 **Multi-role authentication** — admin / staff roles with per-session access control
-- 🌐 **Bilingual Arabic/English interface** — single source-of-truth translation dictionaries with automatic RTL/LTR layout switching
-- 📴 **Offline-first reliability** — local SQLite database, no internet dependency for day-to-day operation
-- 💳 **Credit & debt ledger reporting** — customer debt tracking, partial payments, collection history
-- 📊 **Expense & financial dashboards** — shift summaries, gross profit/margin reporting, growth badges
-- 🚚 **Online order & delivery management** — four-stage order lifecycle with driver dispatch and held-stock reservation
-- 🧾 **Invoice printing & payment tracking** — cash / Vodafone Cash / Instapay with receipt image upload
+**Selling**
+
+- **Barcode-driven terminal** — cart, weighted and per-piece items, split
+  payments across methods, change calculation, and partial payment onto a
+  customer's debt.
+- **Returns and voids** — line-level returns with restock or write-off,
+  refunded against the original payment methods pro rata, or written off an
+  outstanding debt when the invoice was never paid.
+- **Shift accounting** — takings per payment method, and a close that starts
+  with a **blind cash count**: the drawer is counted first, the expected total
+  is revealed afterwards, and the over/short difference is recorded with an
+  explanation when it is large enough to matter.
+
+**Money**
+
+- **Customer debt ledger** — per-customer balances, partial collections,
+  payment history, and ageing.
+- **Purchases and suppliers** — supplier invoices, payments, and stock that
+  reverses correctly when an invoice is deleted.
+- **Expenses and payroll** — categorised expenses and salary history.
+- **Reports** — sales, inventory, debts, purchases, expenses and online orders
+  over any date range.
+- **End-of-day workbook** — an eleven-sheet Excel export of a chosen day or
+  range, built off the main process so a busy day never blocks the UI.
+
+**Operations**
+
+- **Online orders and delivery** — order lifecycle with driver dispatch, held
+  stock reservation and driver settlements.
+- **Configurable operating rules** — stock thresholds, shift length, session
+  timeout, lockout policy, backup retention, receipt width, shop identity and
+  more are stored as settings rather than compiled in.
+- **Data-driven payment methods** — methods are rows, not an enum, and shift
+  totals are derived from what was actually collected.
+- **Activity log** — an append-only record of every sensitive action: who,
+  what, when, and whether it succeeded, failed, or was denied. Passwords are
+  redacted before the record is written, and the table rejects updates and
+  deletes at the database level.
+- **Automatic backups** — periodic `VACUUM INTO` snapshots with retention, an
+  integrity check before every restore, and a safety copy taken at restore time.
+
+**Platform**
+
+- **Bilingual Arabic/English** — one dictionary per language, with the layout
+  mirroring between RTL and LTR.
+- **Offline-first** — a local SQLite database in WAL mode. Nothing leaves the
+  machine.
+- **Capability-based permissions** — every IPC channel is gated by a named
+  capability held by a role, seeded in the database rather than compiled in.
 
 ---
 
 ## 🛠 Tech Stack
 
-| Layer          | Technology                         |
-| -------------- | ---------------------------------- |
-| Desktop shell  | Electron                           |
-| UI             | React 18+, TypeScript              |
-| Build tooling  | Vite                               |
-| Styling        | Tailwind CSS                       |
-| Database       | better-sqlite3 (native C++ module) |
-| State/data     | React Query, React Context         |
-| Virtualization | `@tanstack/react-virtual`          |
+| Layer          | Technology                                      |
+| -------------- | ----------------------------------------------- |
+| Desktop shell  | Electron (context isolation + sandbox enabled)  |
+| UI             | React 18+, TypeScript                           |
+| Build tooling  | Vite                                            |
+| Styling        | Tailwind CSS, shadcn/ui                         |
+| Database       | better-sqlite3 (native C++ module), WAL mode    |
+| State/data     | React Query, React Context                      |
+| Virtualization | `@tanstack/react-virtual`                       |
+| Spreadsheets   | ExcelJS, in a utility process                   |
 
 ---
 
 ## ✅ Prerequisites
 
-- **OS:** Windows 10/11 (x64) — primary deployment target
-- **Node.js:** 22.x (matches CI — see .github/workflows/ci.yml)
+- **OS:** Windows 10/11 (x64) — the deployment target
+- **Node.js:** 22.x (matches CI — see `.github/workflows/ci.yml`)
 - **npm:** bundled with Node.js
-- **Visual Studio Build Tools** (Desktop development with C++ workload) — required to compile the native `better-sqlite3` module
+- **Visual Studio Build Tools** with the "Desktop development with C++"
+  workload — required to compile `better-sqlite3`
 - **Python 3.x** — required by `node-gyp` during native module builds
 
 ---
@@ -89,98 +135,152 @@
 git clone https://github.com/Ziad-Thabet/El-Hana-Yarns.git
 cd El-Hana-Yarns
 
-npm install
+npm install          # postinstall rebuilds better-sqlite3 against Electron's ABI
 
-# Rebuild native modules against Electron's Node ABI
-npx electron-rebuild
-
-npm run dev
+npm run dev          # terminal 1 — Vite dev server on :8080
+npm run electron:dev # terminal 2 — the desktop shell, pointed at that server
 ```
 
-On first launch, if no local database exists yet, the app seeds itself automatically
-from a sanitized demo dataset (see `GIT_WORKFLOW.md` for how that's generated).
+### First run
 
-**Default development credentials:**
+There are **no default accounts**. On a database with no users, the app opens a
+registration screen and the first account created becomes the owner (`admin`).
+Anything shipped with a known password would still be there a year later, which
+is why nothing is.
 
-| Role  | Username | Password   |
-| ----- | -------- | ---------- |
-| Admin | `admin`  | `admin123` |
-| Staff | `staff`  | `staff123` |
+To fill a development database with demo data — catalogue, customers, sales,
+purchases, debts, shifts, expenses, drivers and online orders:
 
-> ⚠️ These are **development-only** fallback credentials. Never use them in production —
-> see [Security Posture](#-security-posture).
+```bash
+node seed-demo.cjs           # add demo data
+node seed-demo.cjs --clear   # remove it again
+```
 
-### Troubleshooting native module builds
+The seeder creates two accounts of its own (`admin` / `admin1234` and
+`cashier` / `cashier1234`). They exist so the demo rows have owners — **never
+seed a shop's real database.**
 
-| Symptom                                                         | Fix                                                                                         |
-| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `better-sqlite3` fails to load / `NODE_MODULE_VERSION` mismatch | Run `npx electron-rebuild` again after any `npm install`                                    |
-| `node-gyp` errors on Windows                                    | Confirm Visual Studio Build Tools has the "Desktop development with C++" workload installed |
-| App builds but crashes on DB access                             | Delete the local `userData` DB and relaunch to trigger re-seed                              |
+### Troubleshooting
+
+| Symptom                                                        | Fix                                                                                                |
+| -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `better-sqlite3` fails to load / `NODE_MODULE_VERSION` mismatch | Run `npm run rebuild` — the module must be built against Electron's ABI, not the system Node's      |
+| `node-gyp` errors on Windows                                    | Confirm Visual Studio Build Tools has the "Desktop development with C++" workload                   |
+| A script that opens the database throws `ERR_DLOPEN_FAILED`     | Run it under Electron: `set ELECTRON_RUN_AS_NODE=1` then `node_modules\.bin\electron script.cjs`    |
+| The window is blank                                             | The Vite dev server is not up — `npm run dev` has to be running before `npm run electron:dev`       |
+
+---
+
+## 🧪 Tests
+
+```bash
+npm test                  # build a fixture database, run every suite
+npm test -- settings      # only suites whose filename matches
+npm test -- --keep        # leave the fixture on disk for inspection
+```
+
+452 checks across 19 suites, run on every pull request. They drive the real
+repositories against a database the runner builds from scratch through the
+application's own bring-up, so no real data is needed and none is committed.
+See [`tests/README.md`](tests/README.md).
 
 ---
 
 ## 📦 Production Build
 
 ```bash
-npm run build
-npm run electron:build
+npm run electron:build    # builds the renderer, then packages with electron-builder
 ```
 
-Native modules (`better-sqlite3` and its `.node` binary) are excluded from the ASAR
-archive via `asarUnpack` in the Electron builder config — native bindings cannot be
-loaded from inside a packed ASAR archive at runtime, so they're unpacked alongside it.
+Native modules (`better-sqlite3`, `sharp`) are excluded from the ASAR archive
+via `asarUnpack` — native bindings cannot be loaded from inside a packed
+archive at runtime, so they are unpacked alongside it.
 
 ---
 
 ## 🗂 Architecture
 
+Three processes, with a single gate between them:
+
+- **Main** owns the database, the filesystem and every privileged operation.
+- **Preload** exposes a frozen, explicitly enumerated API over
+  `contextBridge` — the renderer never sees `ipcRenderer`.
+- **Renderer** is sandboxed and holds no credentials; it asks for things by
+  channel name and gets data back.
+
+Every request passes through one `handle()` wrapper in `electron-main.cjs`,
+which resolves the session, checks the channel's capability, and records the
+outcome in the activity log. A channel cannot be added without a permission,
+and an audited action cannot be forgotten, because there is nowhere else to add
+one.
+
 ```
 ├── db/
-│   ├── repositories/       # One repository per domain (sales, products, debts, ...)
-│   └── helpers/            # Shared query/date/id utilities
-├── shared/                 # Cross-process enums & constants (main + renderer)
+│   ├── migrations.cjs      # versioned schema migrations (PRAGMA user_version)
+│   ├── backup.cjs          # VACUUM INTO snapshots, retention, restore
+│   ├── repositories/       # one repository per domain — all SQL lives here
+│   └── helpers/            # transactions, dates, ids, images, numbers
+├── shared/                 # rules shared by main and renderer (.cjs + .mjs)
+│                           # settings schema, stock units, receipt identity
+├── workers/                # utility-process jobs (Excel workbook building)
 ├── src/
-│   ├── features/           # Feature-sliced modules: sales, purchases, reports,
-│   │                       # expenses, customers-debts, online-orders, drivers, employees
-│   ├── lib/
-│   │   ├── i18n/           # ar.ts / en.ts — single source of truth for all UI strings
-│   │   ├── config/         # App-level config & navigation
-│   │   ├── constants/      # Shared constants (payment types, statuses, shifts)
-│   │   └── theme/          # Design tokens & styling
-│   └── components/         # Shared layout & UI primitives
-├── electron-main.cjs       # Main process entry — IPC bridge, DB bootstrap
-├── preload.js              # Context-isolated IPC bridge to the renderer
-├── database.cjs            # Public DB entry point (wraps repository layer)
-└── seed-demo.cjs           # Generates the sanitized demo dataset
+│   ├── features/           # sales, purchases, reports, expenses, customers,
+│   │                       # online-orders, drivers, employees, settings,
+│   │                       # audit, alerts, auth
+│   ├── lib/i18n/           # ar.data.ts / en.ts — every UI string
+│   ├── lib/api.ts          # the renderer's typed view of the IPC surface
+│   └── components/         # shared layout and UI primitives
+├── tests/                  # suites, fixture builder, runner (`npm test`)
+├── electron-main.cjs       # main process: the handle() gate, IPC, timers
+├── preload.js              # context-isolated bridge
+├── ipc-channels.cjs        # every channel, its permission and its capability
+├── audit-descriptors.cjs   # what each channel records in the activity log
+├── database.cjs            # schema bring-up and repository wiring
+└── seed-demo.cjs           # demo dataset for development
 ```
 
 ---
 
 ## 🔒 Security Posture
 
-- **Change all default credentials** before any production deployment — the
-  `admin` / `admin123` pair is for local development only.
-- **Rotate application salts/secrets** used for password hashing before going live.
-- **Back up the `userData` directory regularly** — it holds the real production
-  database and is intentionally excluded from version control.
-- **Never commit real client data** — `.db`, `.sqlite`, and `userdata/` paths are
-  git-ignored by design; see `GIT_WORKFLOW.md` for verification steps and the
-  remediation protocol if something slips through.
-- Consult `UPGRADE_GUIDE.md` for ongoing maintenance and migration notes.
+**In the application**
+
+- `contextIsolation` and `sandbox` are on; `nodeIntegration` is off. The
+  renderer reaches the main process only through the enumerated preload API.
+- Every IPC call is authorised against the caller's own session — the renderer
+  cannot claim an identity, and the actor recorded in the log always comes from
+  the session rather than the payload.
+- Permissions are capabilities held by roles, stored as rows. The owner's role
+  holds a wildcard and a database with no roles still admits the owner, so a
+  partial migration cannot lock a shop out of its own till.
+- Passwords are hashed with bcrypt (per-hash salts — there is no application
+  salt to rotate). Sessions live in memory and expire; repeated failed logins
+  are rate-limited and locked out.
+- The activity log is append-only, enforced by database triggers rather than by
+  convention, and passwords are stripped before a record is written.
+
+**For a deployment**
+
+- **Create the owner account on the shop's machine, at install time.** There
+  are no shipped credentials to change.
+- **Back up the `userdata` directory.** It holds the real database and is
+  git-ignored by design; the app also keeps its own rotating snapshots.
+- **Never commit real client data.** `.db`, `.sqlite` and `userdata/` are
+  ignored; check `git status` before pushing.
 
 ---
 
 ## 📄 License
 
-Proprietary — built for a specific retail client. Not licensed for redistribution
-unless otherwise agreed.
+Proprietary — built for a specific retail client. Not licensed for
+redistribution unless otherwise agreed. See [LICENSE](LICENSE).
 
 ---
 
 ## 📚 Additional Documentation
 
-- [CHANGELOG](CHANGELOG.md) — development history and version notes
-- [CONTRIBUTING](CONTRIBUTING.md) — coding standards, branching, PR checklist
-- [SECURITY](SECURITY.md) — vulnerability reporting
+- [CHANGELOG](CHANGELOG.md) — release history
+- [CONTRIBUTING](CONTRIBUTING.md) — standards, branching, PR checklist
+- [tests/README](tests/README.md) — how the suites and the fixture work
+- [SECURITY](SECURITY.md) — reporting a vulnerability
 - [CODE OF CONDUCT](CODE_OF_CONDUCT.md)
