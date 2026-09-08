@@ -37,6 +37,7 @@
       "!userdata/**/*",
       "!release/**/*",
       "!dist_electron/**/*",
+      "!tests/**/*",
       "!docs/**/*",
       "!.github/**/*",
       "!.vscode/**/*",
