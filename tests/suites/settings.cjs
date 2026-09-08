@@ -205,5 +205,54 @@ check("default prefix still 20 and 13 digits", defaultCode.startsWith("20") && d
 check("foreign_key_check clean", db.pragma("foreign_key_check").length === 0);
 check("integrity_check ok", db.pragma("integrity_check")[0].integrity_check === "ok");
 
+// ── Every setting has to be presentable ────────────────────────────────────
+// The editor falls back to printing the raw key when a label is missing, which
+// is a silent failure: the setting still works, it just shows up in the shop's
+// settings screen as "shift.openingFloat" with no explanation of what typing a
+// number into it will do. Nothing else catches that, so this does.
+console.log("\n=== every setting is labelled in both languages ===");
+const labelsOf = (file, section) => {
+  const source = fs.readFileSync(path.join(P, "src", "lib", "i18n", file), "utf8");
+  const start = source.indexOf(section, source.indexOf("settings:"));
+  if (start === -1) return new Set();
+  // The block ends at the first line that closes it at the same indentation.
+  const end = source.indexOf("\n    },", start);
+  const block = source.slice(start, end === -1 ? undefined : end);
+  return new Set([...block.matchAll(/"([\w.]+)":/g)].map((m) => m[1]));
+};
+
+const arLabels = labelsOf("ar.data.ts", "labels: {");
+const enLabels = labelsOf("en.ts", "labels: {");
+const keys = Object.keys(schema.SETTINGS);
+
+const missingAr = keys.filter((k) => !arLabels.has(k));
+const missingEn = keys.filter((k) => !enLabels.has(k));
+check("every setting has an Arabic label", missingAr.length === 0, missingAr.join(", "));
+check("every setting has an English label", missingEn.length === 0, missingEn.join(", "));
+
+// The reverse matters too: a label left behind after a setting is removed is a
+// row in the editor that no longer exists.
+const strayAr = [...arLabels].filter((k) => !keys.includes(k));
+check("no Arabic label without a setting", strayAr.length === 0, strayAr.join(", "));
+
+// Client-scoped settings are read through a compiled fallback map, so one
+// missing there renders as undefined until the query resolves.
+const hooks = fs.readFileSync(
+  path.join(P, "src", "features", "settings", "hooks.ts"),
+  "utf8",
+);
+const fallbacks = new Set(
+  [...hooks.slice(hooks.indexOf("CLIENT_DEFAULTS")).matchAll(/"([\w.]+)":/g)].map((m) => m[1]),
+);
+const clientKeys = keys.filter(
+  (k) => schema.SETTINGS[k].scope === "client" || schema.SETTINGS[k].scope === "both",
+);
+const missingFallback = clientKeys.filter((k) => !fallbacks.has(k));
+check(
+  "every client setting has a compiled fallback",
+  missingFallback.length === 0,
+  missingFallback.join(", "),
+);
+
 console.log(failures === 0 ? "\nALL CHECKS PASSED" : `\n${failures} CHECK(S) FAILED`);
 process.exit(failures === 0 ? 0 : 1);
