@@ -347,6 +347,7 @@ export const strings = {
     invoiceCount: "Invoice Count",
     searchPlaceholder: "Search by invoice number...",
     invoiceUnit: "invoice",
+    afterReturns: "({amount} returned)",
     currentShiftInvoices: "Current Shift Invoices",
     allSalesTitle: "All Sales",
     sourceFilterAll: "All",

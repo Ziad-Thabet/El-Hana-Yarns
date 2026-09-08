@@ -1,7 +1,7 @@
 const { generateId } = require("../helpers/ids.cjs");
 const { nowDateTime, normalizeIsoDate } = require("../helpers/isoDates.cjs");
 const images = require("../helpers/images.cjs");
-const { safeNumber } = require("../helpers/numbers.cjs");
+const { safeNumber, round } = require("../helpers/numbers.cjs");
 const { stockUnitsFor } = require("../../shared/stockUnits.cjs");
 const { nextDocumentNumber } = require("../helpers/documentNumbers.cjs");
 // SQLite's default parameter ceiling is 999; stay clear of it when expanding
@@ -68,10 +68,22 @@ function hydrateSaleInvoices(db, invoices) {
        FROM customer_debts WHERE invoice_id IN (__IDS__)`,
     ids,
   );
+  // What came back. Taken from the returns themselves rather than from the
+  // refund payment records, because a return against an unpaid invoice reduces
+  // the debt instead of paying money out — but the invoice is worth less either
+  // way, and a list that ignored that would overstate the day's takings.
+  const refunds = fetchByIds(
+    db,
+    `SELECT invoice_id, SUM(total) AS refunded
+       FROM sale_returns WHERE invoice_id IN (__IDS__)
+      GROUP BY invoice_id`,
+    ids,
+  );
 
   const itemsByInvoice = groupBy(items, "invoice_id");
   const paymentsByInvoice = groupBy(payments, "ref_id");
   const debtByInvoice = new Map(debts.map((d) => [d.invoice_id, d]));
+  const refundByInvoice = new Map(refunds.map((r) => [r.invoice_id, r.refunded]));
 
   return invoices.map((inv) =>
     mapSaleInvoice(
@@ -79,11 +91,13 @@ function hydrateSaleInvoices(db, invoices) {
       itemsByInvoice.get(inv.id) ?? [],
       paymentsByInvoice.get(inv.id) ?? [],
       debtByInvoice.get(inv.id) ?? null,
+      refundByInvoice.get(inv.id) ?? 0,
     ),
   );
 }
 
-function mapSaleInvoice(inv, items, payments = [], debt = null) {
+function mapSaleInvoice(inv, items, payments = [], debt = null, refunded = 0) {
+  const refundedAmount = round(safeNumber(refunded));
   return {
     id: inv.id,
     invoiceNumber: inv.invoice_number,
@@ -93,6 +107,9 @@ function mapSaleInvoice(inv, items, payments = [], debt = null) {
     cashier: inv.cashier,
     shiftId: inv.shift_id ?? null,
     returnStatus: inv.return_status ?? "none",
+    refundedAmount,
+    /** What the invoice is still worth after returns — what a total should sum. */
+    netTotal: round(safeNumber(inv.total) - refundedAmount),
     paymentMethod: payments[0]?.method ?? inv.payment_method ?? null,
     paidAmount: debt ? debt.paid_amount : undefined,
     remainingAmount: debt ? debt.remaining_amount : undefined,
@@ -149,7 +166,12 @@ function createSalesDB(getDb, productsDB) {
           "SELECT invoice_id, total_amount, paid_amount, remaining_amount FROM customer_debts WHERE invoice_id=? LIMIT 1",
         )
         .get(id);
-      return mapSaleInvoice(inv, items, payments, debt ?? null);
+      const refunded = db
+        .prepare(
+          "SELECT COALESCE(SUM(total), 0) AS refunded FROM sale_returns WHERE invoice_id=?",
+        )
+        .get(id).refunded;
+      return mapSaleInvoice(inv, items, payments, debt ?? null, refunded);
     },
     complete(checkoutData) {
       const db = getDb();

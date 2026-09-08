@@ -16,6 +16,10 @@ export interface SaleInvoice {
   remainingAmount?: number;
   /** 'none' | 'partial' | 'full' — set by the returns flow. */
   returnStatus?: string | null;
+  /** Value returned against this invoice, whether refunded or written off a debt. */
+  refundedAmount?: number;
+  /** `total` less what came back. This is what a revenue total should sum. */
+  netTotal?: number;
 }
 
 export interface Shift {
