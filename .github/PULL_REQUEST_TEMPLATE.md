@@ -16,7 +16,9 @@ Closes #
 
 ## Checklist
 
+- [ ] `npm test` passes
 - [ ] `npm run lint` passes with no new warnings
+- [ ] `npx tsc --noEmit` is clean
 - [ ] `npm run build` succeeds
 - [ ] No hardcoded Arabic/English strings added outside `src/lib/i18n/`
 - [ ] Tailwind classes use logical (`ms-*`/`me-*`) not physical (`ml-*`/`mr-*`) forms
