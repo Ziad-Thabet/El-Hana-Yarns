@@ -65,6 +65,17 @@ const SETTINGS = {
   "shift.staleHours": {
     type: "number", default: 10, min: 1, max: 168, group: GROUP.SHIFT, scope: "both",
   },
+  // What the drawer starts the day with. Recorded onto each shift when it
+  // opens, so changing this later re-floats tomorrow without rewriting what
+  // yesterday was counted against.
+  "shift.openingFloat": {
+    type: "number", default: 0, min: 0, max: 1000000, group: GROUP.SHIFT, scope: "both",
+  },
+  // Above this difference between the counted drawer and the expected drawer,
+  // closing asks for an explanation. Zero means always ask.
+  "shift.varianceNoteThreshold": {
+    type: "number", default: 20, min: 0, max: 1000000, group: GROUP.SHIFT, scope: "both",
+  },
 
   // ── Alerts ───────────────────────────────────────────────────────────────
   "alerts.overdueInvoiceDays": {

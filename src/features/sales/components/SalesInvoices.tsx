@@ -9,7 +9,7 @@ import { ShiftSummaryCards } from "./ShiftSummaryCards";
 import { DateFilterBar } from "./DateFilterBar";
 import { InvoiceList } from "./InvoiceList";
 import { InvoiceDetailDialog } from "./InvoiceDetailDialog";
-import { EndShiftDialog } from "./EndShiftDialog";
+import { CloseRegisterDialog } from "./CloseRegisterDialog";
 import { AdminShiftBlock } from "./AdminShiftBlock";
 import { type DatePreset, getPresetRange } from "@/lib/dateFilterPresets";
 import { InvoicePrint } from "@/components/InvoicePrint";
@@ -149,36 +149,7 @@ const SalesInvoices = ({
     });
   }, []);
   const [endShiftOpen, setEndShiftOpen] = useState(false);
-  const [endingShift, setEndingShift] = useState(false);
   const [shiftToEnd, setShiftToEnd] = useState<Shift | null>(null);
-  const handleEndShift = async () => {
-    const target = shiftToEnd ?? activeShift;
-    if (!target) return;
-    try {
-      setEndingShift(true);
-      const res = await window.api.shifts.end(
-        target.id,
-        new Date().toISOString(),
-      );
-      if (!res.success) throw new Error(res.message);
-      qc.invalidateQueries({ queryKey: ["shifts"] });
-      toast({
-        title: strings.shifts.shiftEnded,
-        variant: "default",
-      });
-      setEndShiftOpen(false);
-      setShiftToEnd(null);
-      onShiftEnded?.();
-    } catch (err) {
-      toast({
-        title: strings.shifts.shiftEndError,
-        description: err instanceof Error ? err.message : undefined,
-        variant: "destructive",
-      });
-    } finally {
-      setEndingShift(false);
-    }
-  };
   const openEndShiftFor = (shift: Shift) => {
     setShiftToEnd(shift);
     setEndShiftOpen(true);
@@ -209,11 +180,19 @@ const SalesInvoices = ({
         onPrint={openPrint}
         isAdmin={isAdmin}
       />
-      <EndShiftDialog
+      <CloseRegisterDialog
         open={endShiftOpen}
-        loading={endingShift}
-        onConfirm={handleEndShift}
-        onCancel={() => setEndShiftOpen(false)}
+        shiftId={(shiftToEnd ?? activeShift)?.id ?? null}
+        onClosed={() => {
+          qc.invalidateQueries({ queryKey: ["shifts"] });
+          setEndShiftOpen(false);
+          setShiftToEnd(null);
+          onShiftEnded?.();
+        }}
+        onCancel={() => {
+          setEndShiftOpen(false);
+          setShiftToEnd(null);
+        }}
       />
       <div className="flex items-start justify-between gap-4">
         <div>

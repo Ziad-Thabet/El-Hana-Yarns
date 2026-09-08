@@ -18,6 +18,7 @@ import type {
   ReportRequest,
   ReportResult,
   Shift,
+  ShiftClosePreview,
   ShiftSummary,
   Employee,
   SalaryHistoryRecord,
@@ -225,6 +226,16 @@ declare global {
           nowIso: string,
         ) => Promise<ApiResponse<Shift>>;
         end: (shiftId: string, endedAt: string) => Promise<ApiResponse<Shift>>;
+        previewClose: (
+          shiftId: string,
+          countedCash: number,
+        ) => Promise<ApiResponse<ShiftClosePreview>>;
+        closeRegister: (
+          shiftId: string,
+          countedCash: number,
+          note?: string | null,
+          endedAt?: string,
+        ) => Promise<ApiResponse<Shift>>;
         getInvoices: (shiftId: string) => Promise<ApiResponse<SaleInvoice[]>>;
         getAllInvoices: (
           from?: string,

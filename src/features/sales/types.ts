@@ -33,6 +33,28 @@ export interface Shift {
   totalInstapay: number;
   totalInvoices: number;
   status: "open" | "closed";
+  /** What the drawer started with. */
+  openingFloat?: number;
+  /** Null when the shift was closed without anyone counting the drawer. */
+  countedCash?: number | null;
+  expectedCash?: number | null;
+  cashVariance?: number | null;
+  closeNote?: string | null;
+  closedBy?: string | null;
+}
+
+/** What the drawer should hold, revealed only once a count has been entered. */
+export interface ShiftClosePreview {
+  shiftId: string;
+  openingFloat: number;
+  expectedCash: number;
+  countedCash: number;
+  /** Counted less expected: positive is over, negative is short. */
+  variance: number;
+  invoiceCount: number;
+  byCode: Record<string, number>;
+  /** Above this difference, closing asks for an explanation. */
+  noteThreshold: number;
 }
 
 export interface ShiftSummary {

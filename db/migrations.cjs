@@ -564,6 +564,34 @@ const MIGRATIONS = [
       }
     },
   },
+  {
+    version: 7,
+    name: "cash-count",
+    up(db) {
+      // Closing a register is a count, not a calculation: the cashier says what
+      // is physically in the drawer and the difference against what should be
+      // there is recorded. Nulls are meaningful — a shift closed automatically,
+      // or by deactivating its owner, was never counted, and must not be shown
+      // as counted zero.
+      const columns = new Set(
+        db.pragma("table_info(shifts)").map((c) => c.name),
+      );
+      const add = (name, decl) => {
+        if (!columns.has(name)) {
+          db.exec(`ALTER TABLE shifts ADD COLUMN ${name} ${decl}`);
+        }
+      };
+      add("opening_float", "REAL NOT NULL DEFAULT 0");
+      add("counted_cash", "REAL");
+      add("expected_cash", "REAL");
+      add("cash_variance", "REAL");
+      add("close_note", "TEXT");
+      // No foreign key: ALTER TABLE cannot add one, and rebuilding the table
+      // half the schema references to record who pressed close is not a trade
+      // worth making. The id is denormalised the same way the audit log's is.
+      add("closed_by", "TEXT");
+    },
+  },
 ];
 
 function getSchemaVersion(db) {

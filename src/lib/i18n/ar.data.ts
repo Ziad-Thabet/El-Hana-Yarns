@@ -295,6 +295,23 @@ export const strings = {
   },
 
   shifts: {
+    closeRegisterTitle: "إقفال الدرج وإنهاء الشيفت",
+    countDrawerHint:
+      "عُدّ الكاش اللي في الدرج دلوقتي واكتب المبلغ. المفروض يظهر بعد ما تدخل الرقم، عشان العدّ يبقى حقيقي.",
+    countedCashLabel: "الكاش المعدود",
+    reviewCount: "راجع الفرق",
+    expectedCash: "المفروض في الدرج",
+    countedCash: "المعدود",
+    varianceBalanced: "الدرج مظبوط",
+    varianceOver: "زيادة",
+    varianceShort: "عجز",
+    openingFloatNote: "متضمّن رصيد بداية اليوم {amount}.",
+    noteOptional: "ملاحظة (اختياري)",
+    noteRequired: "ملاحظة (مطلوبة)",
+    notePlaceholder: "مثلاً: باقي عميل، أو صرف من الدرج",
+    noteRequiredHint: "الفرق أكبر من {amount}، اكتب سبب قبل الإقفال.",
+    confirmClose: "تأكيد الإقفال",
+    closeRegisterFailed: "تعذّر إقفال الشيفت",
     endShift: "إنهاء الشيفت",
     endShiftConfirmTitle: "تأكيد إنهاء الشيفت",
     endShiftConfirmDesc:
@@ -744,6 +761,7 @@ export const strings = {
     actions: {
       "sale.return": "مرتجع",
       "sale.void": "إلغاء فاتورة",
+      "shift.close": "إقفال وردية",
       "stock.adjust": "تعديل مخزون",
       "product.create": "إضافة منتج",
       "product.update": "تعديل منتج",
