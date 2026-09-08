@@ -1,11 +1,13 @@
 const {
   app,
   BrowserWindow,
+  dialog,
   ipcMain,
   protocol,
   net,
   session,
   shell,
+  utilityProcess,
 } = require("electron");
 const path = require("path");
 // One comma-separated value: appendSwitch replaces any previous value for the
@@ -261,6 +263,56 @@ function restartBackgroundTimers() {
   );
 }
 
+const EXCEL_BUILD_TIMEOUT_MS = 2 * 60 * 1000;
+
+/**
+ * Builds the workbook in a child process.
+ *
+ * Not in main: it is single threaded and owns window compositing, so a
+ * multi-second build there freezes the whole application. Not in the renderer
+ * either: the data would cross the bridge only to become a file.
+ */
+function buildWorkbookInChild(data, filePath) {
+  return new Promise((resolve, reject) => {
+    const workerPath = path.join(__dirname, "workers", "excelWriter.cjs");
+    let child = null;
+    let settled = false;
+    const finish = (fn, value) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      try {
+        if (child) child.kill();
+      } catch {
+        /* already gone */
+      }
+      fn(value);
+    };
+    // A worker that hangs must not leave the export spinning forever.
+    const timer = setTimeout(
+      () => finish(reject, new Error("تعذر إنشاء الملف — انتهت المهلة")),
+      EXCEL_BUILD_TIMEOUT_MS,
+    );
+    try {
+      child = utilityProcess.fork(workerPath, [], { serviceName: "excel-writer" });
+    } catch (err) {
+      return finish(reject, err);
+    }
+    child.on("message", (message) => {
+      if (message?.ok) finish(resolve, message.filePath);
+      else finish(reject, new Error(message?.error ?? "فشل إنشاء الملف"));
+    });
+    child.on("exit", (code) => {
+      if (!settled) {
+        finish(reject, new Error(`توقف منشئ الملف بشكل غير متوقع (${code})`));
+      }
+    });
+    // The port is only connected once the child has spawned; posting earlier
+    // drops the payload and the export would hang until the timeout.
+    child.on("spawn", () => child.postMessage({ data, filePath }));
+  });
+}
+
 function registerHandlers() {
   const {
     categoriesDB,
@@ -281,6 +333,7 @@ function registerHandlers() {
     settingsDB,
     auditDB,
     rolesDB,
+    endOfDayDB,
   } = db;
   function getTodayDateYMD() {
     return formatDateYMD(new Date());
@@ -624,6 +677,35 @@ function registerHandlers() {
     restartBackgroundTimers();
     return result;
   });
+  // ── END OF DAY ────────────────────────────
+  handle("endOfDay:preview", ({ from, to } = {}) =>
+    endOfDayDB.build(from, to ?? from),
+  );
+  handle("endOfDay:export", async ({ from, to } = {}) => {
+    const data = endOfDayDB.build(from, to ?? from);
+    const label = data.meta.isSingleDay
+      ? data.meta.from
+      : `${data.meta.from}_${data.meta.to}`;
+    const result = await dialog.showSaveDialog(mainWindow, {
+      title: "حفظ تقرير نهاية اليوم",
+      defaultPath: `تقرير-${label}.xlsx`,
+      filters: [{ name: "Excel", extensions: ["xlsx"] }],
+    });
+    if (result.canceled || !result.filePath) {
+      return { cancelled: true, filePath: null };
+    }
+    const filePath = await buildWorkbookInChild(data, result.filePath);
+    return {
+      cancelled: false,
+      filePath,
+      rowCounts: {
+        invoices: data.invoices.length,
+        lines: data.lines.length,
+        returns: data.returns.length,
+        alerts: data.alerts.length,
+      },
+    };
+  });
   // ── AUDIT ─────────────────────────────────
   handle("audit:query", (filters) => auditDB.query(filters ?? {}));
   handle("audit:getFilterOptions", () => auditDB.getFilterOptions());
@@ -820,6 +902,7 @@ if (!gotSingleInstanceLock) {
       settingsDB: dbModule.settingsDB,
       auditDB: dbModule.auditDB,
       rolesDB: dbModule.rolesDB,
+      endOfDayDB: dbModule.endOfDayDB,
       applyRuntimeSettings: dbModule.applyRuntimeSettings,
       backups: dbModule.backups,
     };

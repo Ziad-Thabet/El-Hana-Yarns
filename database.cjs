@@ -33,6 +33,7 @@ const { createRolesDB } = require("./db/repositories/roles.cjs");
 const {
   createPaymentMethodsDB,
 } = require("./db/repositories/paymentMethods.cjs");
+const { createEndOfDayDB } = require("./db/repositories/endOfDay.cjs");
 
 const isDev = !app.isPackaged;
 
@@ -961,6 +962,7 @@ const settingsDB = createSettingsDB(() => db);
 const auditDB = createAuditDB(() => db);
 const rolesDB = createRolesDB(() => db);
 const paymentMethodsDB = createPaymentMethodsDB(() => db);
+const endOfDayDB = createEndOfDayDB(() => db, settingsDB);
 
 const categoriesDB = createCategoriesDB(() => db);
 
@@ -1035,5 +1037,6 @@ module.exports = {
   auditDB,
   rolesDB,
   paymentMethodsDB,
+  endOfDayDB,
   applyRuntimeSettings,
 };
