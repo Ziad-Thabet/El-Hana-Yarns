@@ -8,6 +8,7 @@
 const path = require("path");
 const fs = require("fs");
 const Database = require("better-sqlite3");
+const bcryptjs = require("bcryptjs");
 const {
   ORDER_STATUS,
   ORDER_SOURCE,
@@ -18,7 +19,12 @@ const {
 const { computePaymentBreakdown } = require("./shared/onlineOrdersPayment.cjs");
 
 // ── DB path (dev userdata) ─────────────────────────
-const DB_PATH = path.join(__dirname, "userdata", "el-hana-yarns.db");
+// Honours the same override the app does, so the seeder can fill a scratch
+// database without touching the shop's own.
+const DATA_DIR = process.env.ELHANA_DATA_DIR
+  ? path.resolve(process.env.ELHANA_DATA_DIR)
+  : path.join(__dirname, "userdata");
+const DB_PATH = path.join(DATA_DIR, "el-hana-yarns.db");
 if (!fs.existsSync(DB_PATH)) {
   console.error("❌ مش لاقي الـ DB — شغّل الـ app الأول عشان يتعمل الملف");
   process.exit(1);
@@ -82,6 +88,20 @@ function seed() {
     const lastWeek = new Date(today);
     lastWeek.setDate(today.getDate() - 6);
     const fmt = (d) => d.toISOString().slice(0, 10);
+
+    // ── Accounts ──────────────────────────────────
+    // The rows below reference their actors by literal id: "admin" for
+    // anything the owner did, "user-staff-1" for the cashier. Those ids are
+    // now real foreign keys, so the accounts have to exist before anything
+    // else is written. Existing accounts are left alone.
+    const insertUser = db.prepare(
+      `INSERT OR IGNORE INTO users (id, username, password_hash, display_name, role, is_active, created_at)
+       VALUES (?,?,?,?,?,1,?)`,
+    );
+    const nowIso = new Date().toISOString();
+    insertUser.run("admin", "admin", bcryptjs.hashSync("admin1234", 10), "المدير", "admin", nowIso);
+    insertUser.run("user-staff-1", "cashier", bcryptjs.hashSync("cashier1234", 10), "الكاشير", "staff", nowIso);
+    console.log("✔ Users: admin / admin1234 — cashier / cashier1234");
 
     // ── Categories ────────────────────────────────
     const categories = [
@@ -427,7 +447,7 @@ function seed() {
       },
       {
         id: id("sinv"),
-        invoiceNumber: "SL-DEMO-004",
+        invoiceNumber: "SL-DEMO-008",
         date: fmt(lastWeek),
         time: "04:00 م",
         total: 215,

@@ -37,9 +37,14 @@ const { createEndOfDayDB } = require("./db/repositories/endOfDay.cjs");
 
 const isDev = !app.isPackaged;
 
-const DATA_DIR = isDev
-  ? path.join(__dirname, "userdata")
-  : app.getPath("userData");
+// An explicit directory wins over both, so the app can be pointed at a scratch
+// database — that is how the test suite builds a fixture through the real
+// bring-up path instead of maintaining a second copy of the schema.
+const DATA_DIR = process.env.ELHANA_DATA_DIR
+  ? path.resolve(process.env.ELHANA_DATA_DIR)
+  : isDev
+    ? path.join(__dirname, "userdata")
+    : app.getPath("userData");
 
 const DB_PATH = path.join(DATA_DIR, "el-hana-yarns.db");
 

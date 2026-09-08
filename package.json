@@ -15,7 +15,8 @@
     "electron:dev": "electron .",
     "electron:build": "npm run build && electron-builder",
     "rebuild": "npx @electron/rebuild -f -w better-sqlite3",
-    "postinstall": "npx @electron/rebuild -f -w better-sqlite3"
+    "postinstall": "npx @electron/rebuild -f -w better-sqlite3",
+    "test": "node tests/run.cjs"
   },
   "build": {
     "appId": "com.elhana.yarns",
