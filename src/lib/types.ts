@@ -104,6 +104,7 @@ export type { Alert, AlertType } from "@/features/alerts/types";
 export type { Shift } from "@/features/sales/types";
 
 export type { ShiftSummary } from "@/features/sales/types";
+export type { ShiftClosePreview } from "@/features/sales/types";
 
 export type {
   SalaryType,

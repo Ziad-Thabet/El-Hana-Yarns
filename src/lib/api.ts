@@ -46,6 +46,7 @@ import type {
   AuditQuery,
   AuditQueryResult,
   AuditFilterOptions,
+  ShiftClosePreview,
 } from "./types";
 async function call<T>(
   fn: () => Promise<{ success: boolean; data?: T; message?: string }>,
@@ -383,3 +384,13 @@ export const endOfDayApi = {
   preview: (from: string, to?: string) =>
     call<unknown>(() => window.api.endOfDay.preview(from, to)),
 };
+// SHIFT CLOSING
+export const shiftCloseApi = {
+  preview: (shiftId: string, countedCash: number) =>
+    call<ShiftClosePreview>(() =>
+      window.api.shifts.previewClose(shiftId, countedCash),
+    ),
+  close: (shiftId: string, countedCash: number, note?: string | null) =>
+    call(() => window.api.shifts.closeRegister(shiftId, countedCash, note)),
+};
+

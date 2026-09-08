@@ -582,6 +582,18 @@ function registerHandlers() {
   handle("shifts:end", ({ shiftId, endedAt }) =>
     shiftsDB.end(shiftId, endedAt),
   );
+  handle("shifts:previewClose", ({ shiftId, countedCash }) =>
+    shiftsDB.previewClose(shiftId, countedCash),
+  );
+  // Who closed the register comes from the session, never the renderer.
+  handle("shifts:closeRegister", ({ shiftId, countedCash, note, endedAt }, session) =>
+    shiftsDB.closeRegister(shiftId, {
+      countedCash,
+      note,
+      endedAt: endedAt ?? new Date().toISOString(),
+      closedBy: session?.userId ?? null,
+    }),
+  );
   handle("shifts:getInvoices", (shiftId) => shiftsDB.getInvoices(shiftId));
   handle("shifts:getAllInvoices", ({ from, to } = {}) =>
     shiftsDB.getAllInvoices(from, to),

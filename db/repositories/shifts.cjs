@@ -19,6 +19,13 @@ function mapShift(row) {
     totalInstapay: row.total_instapay,
     totalInvoices: row.total_invoices,
     status: row.status,
+    openingFloat: row.opening_float ?? 0,
+    // Null means never counted — an auto-closed shift, not a drawer of zero.
+    countedCash: row.counted_cash ?? null,
+    expectedCash: row.expected_cash ?? null,
+    cashVariance: row.cash_variance ?? null,
+    closeNote: row.close_note ?? null,
+    closedBy: row.closed_by ?? null,
   };
 }
 const STALE_SHIFT_HOURS = 10;
@@ -69,6 +76,36 @@ function createShiftsDB(getDb, settingsDB = null, paymentMethodsDB = null) {
     }
     return { ...legacy, byCode };
   }
+  /**
+   * Which payment codes represent money in the drawer.
+   *
+   * Read from the methods table rather than hard-coded, so a shop that adds a
+   * second cash-like method counts it without a code change. Falls back to the
+   * one code the app has always used if the table is unavailable.
+   */
+  function cashCodes() {
+    const methods = paymentMethodsDB?.getAll?.() ?? [];
+    const codes = methods.filter((m) => m.isCash).map((m) => m.code);
+    return codes.length > 0 ? codes : ["cash"];
+  }
+
+  const openingFloatSetting = () =>
+    round(settingsDB?.getNumber("shift.openingFloat") ?? 0);
+
+  /**
+   * What the drawer should hold: the float it opened with plus the cash taken
+   * during the shift. Refunds are already negative in `byCode`, so cash paid
+   * back out subtracts itself.
+   */
+  function expectedCashFor(shiftRow, totals) {
+    const codes = new Set(cashCodes());
+    let collected = 0;
+    for (const [code, amount] of Object.entries(totals.byCode)) {
+      if (codes.has(code)) collected = round(collected + amount);
+    }
+    return round((shiftRow?.opening_float ?? 0) + collected);
+  }
+
   function calcShiftInvoiceCount(shiftId) {
     const db = getDb();
     const row = db
@@ -106,10 +143,16 @@ function createShiftsDB(getDb, settingsDB = null, paymentMethodsDB = null) {
    * user with an open shift. Three writers of the same financial totals is how
    * they drift apart, so every path now funnels through this one.
    */
-  function closeShift(db, shiftId, endedAt) {
+  function closeShift(db, shiftId, endedAt, count_ = null) {
     const totals = calcShiftTotals(shiftId);
     const count = calcShiftInvoiceCount(shiftId);
     writeShiftTotals(db, shiftId, totals.byCode);
+    const shiftRow = db.prepare("SELECT * FROM shifts WHERE id=?").get(shiftId);
+    const expected = expectedCashFor(shiftRow, totals);
+    // A shift closed without a count — automatically, or because its owner was
+    // deactivated — records no drawer figures at all. Writing zeros there would
+    // read as a drawer counted empty, which is a different and much worse claim.
+    const counted = count_ ? round(count_.countedCash) : null;
     db.prepare(
       `UPDATE shifts SET
          status='closed',
@@ -117,7 +160,12 @@ function createShiftsDB(getDb, settingsDB = null, paymentMethodsDB = null) {
          total_cash=?,
          total_vodafone=?,
          total_instapay=?,
-         total_invoices=?
+         total_invoices=?,
+         counted_cash=?,
+         expected_cash=?,
+         cash_variance=?,
+         close_note=?,
+         closed_by=?
        WHERE id=?`,
     ).run(
       endedAt,
@@ -125,6 +173,11 @@ function createShiftsDB(getDb, settingsDB = null, paymentMethodsDB = null) {
       totals.vodafone_cash,
       totals.instapay,
       count,
+      counted,
+      counted === null ? null : expected,
+      counted === null ? null : round(counted - expected),
+      count_?.note ?? null,
+      count_?.closedBy ?? null,
       shiftId,
     );
     return mapShift(db.prepare("SELECT * FROM shifts WHERE id=?").get(shiftId));
@@ -136,9 +189,9 @@ function createShiftsDB(getDb, settingsDB = null, paymentMethodsDB = null) {
       const id = generateId("shft");
       db.prepare(
         `INSERT INTO shifts (id, user_id, date, started_at, status,
-          total_cash, total_vodafone, total_instapay, total_invoices)
-         VALUES (?, ?, ?, ?, 'open', 0, 0, 0, 0)`,
-      ).run(id, userId, date, startedAt);
+          total_cash, total_vodafone, total_instapay, total_invoices, opening_float)
+         VALUES (?, ?, ?, ?, 'open', 0, 0, 0, 0, ?)`,
+      ).run(id, userId, date, startedAt, openingFloatSetting());
       return mapShift(db.prepare("SELECT * FROM shifts WHERE id=?").get(id));
     },
     getActive(userId, date) {
@@ -221,6 +274,51 @@ function createShiftsDB(getDb, settingsDB = null, paymentMethodsDB = null) {
         .get(shiftId);
       if (!shift) throw new Error("shift_not_found_or_already_closed");
       return closeShift(db, shiftId, endedAt);
+    },
+    /**
+     * What the drawer should hold, without closing anything.
+     *
+     * Deliberately takes the counted figure as an argument: the count is made
+     * against the drawer, not against a number on the screen, so the expected
+     * total is only ever revealed once a figure has been entered.
+     */
+    previewClose(shiftId, countedCash) {
+      const db = getDb();
+      const shift = db.prepare("SELECT * FROM shifts WHERE id=?").get(shiftId);
+      if (!shift) throw new Error("shift_not_found");
+      const totals = calcShiftTotals(shiftId);
+      const expected = expectedCashFor(shift, totals);
+      const counted = round(countedCash ?? 0);
+      return {
+        shiftId,
+        openingFloat: round(shift.opening_float ?? 0),
+        expectedCash: expected,
+        countedCash: counted,
+        variance: round(counted - expected),
+        invoiceCount: calcShiftInvoiceCount(shiftId),
+        byCode: totals.byCode,
+        noteThreshold: round(
+          settingsDB?.getNumber("shift.varianceNoteThreshold") ?? 20,
+        ),
+      };
+    },
+    /** Closes a shift against a counted drawer. */
+    closeRegister(shiftId, { countedCash, note = null, endedAt, closedBy }) {
+      const db = getDb();
+      const shift = db
+        .prepare("SELECT * FROM shifts WHERE id=? AND status='open'")
+        .get(shiftId);
+      if (!shift) throw new Error("shift_not_found_or_already_closed");
+      if (countedCash === null || countedCash === undefined || Number.isNaN(Number(countedCash))) {
+        throw new Error("counted_cash_required");
+      }
+      if (Number(countedCash) < 0) throw new Error("counted_cash_negative");
+      const closed = closeShift(db, shiftId, endedAt, {
+        countedCash: Number(countedCash),
+        note: note ? String(note).slice(0, 500) : null,
+        closedBy: closedBy ?? null,
+      });
+      return closed;
     },
     /**
      * Closes an open shift without requiring it to be the caller's own —

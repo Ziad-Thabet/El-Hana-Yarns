@@ -296,6 +296,23 @@ export const strings = {
   },
 
   shifts: {
+    closeRegisterTitle: "Close the drawer and end the shift",
+    countDrawerHint:
+      "Count the cash in the drawer now and enter the amount. What was expected appears only afterwards, so the count is a real one.",
+    countedCashLabel: "Counted cash",
+    reviewCount: "Review the difference",
+    expectedCash: "Expected in drawer",
+    countedCash: "Counted",
+    varianceBalanced: "The drawer balances",
+    varianceOver: "Over by",
+    varianceShort: "Short by",
+    openingFloatNote: "Includes an opening float of {amount}.",
+    noteOptional: "Note (optional)",
+    noteRequired: "Note (required)",
+    notePlaceholder: "e.g. customer change, or cash taken out",
+    noteRequiredHint: "The difference is over {amount} — give a reason before closing.",
+    confirmClose: "Confirm closing",
+    closeRegisterFailed: "Could not close the shift",
     endShift: "End Shift",
     endShiftConfirmTitle: "Confirm End Shift",
     endShiftConfirmDesc:
@@ -748,6 +765,7 @@ export const strings = {
     actions: {
       "sale.return": "Return",
       "sale.void": "Void invoice",
+      "shift.close": "Close shift",
       "stock.adjust": "Stock adjustment",
       "product.create": "Product added",
       "product.update": "Product edited",

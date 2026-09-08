@@ -32,6 +32,16 @@ const AUDIT_DESCRIPTORS = {
     summary: (p, r) =>
       `مرتجع ${r?.returnNumber ?? ""} بقيمة ${r?.total ?? 0}`.trim(),
   },
+  "shifts:closeRegister": {
+    action: "shift.close",
+    entity: "shift",
+    entityId: (p) => p?.shiftId ?? null,
+    // The variance is the whole point of the record: a drawer that was short
+    // should be answerable later without reopening the shift.
+    summary: (_p, r) =>
+      `إقفال وردية — المعدود ${r?.countedCash ?? 0} / المتوقع ${r?.expectedCash ?? 0}` +
+      ` (فرق ${r?.cashVariance ?? 0})`,
+  },
   "returns:void": {
     action: "sale.void",
     entity: "sale_invoice",

@@ -390,6 +390,28 @@ contextBridge.exposeInMainWorld("api", {
       }
       return secureInvoke("shifts:end", { shiftId, endedAt });
     },
+    previewClose: (shiftId, countedCash) => {
+      if (typeof shiftId !== "string" || typeof countedCash !== "number") {
+        return Promise.reject(new Error("Invalid cash count data"));
+      }
+      return secureInvoke("shifts:previewClose", { shiftId, countedCash });
+    },
+    closeRegister: (shiftId, countedCash, note, endedAt) => {
+      if (
+        typeof shiftId !== "string" ||
+        typeof countedCash !== "number" ||
+        !Number.isFinite(countedCash) ||
+        (note !== undefined && note !== null && typeof note !== "string")
+      ) {
+        return Promise.reject(new Error("Invalid cash count data"));
+      }
+      return secureInvoke("shifts:closeRegister", {
+        shiftId,
+        countedCash,
+        note: note ?? null,
+        endedAt,
+      });
+    },
     getInvoices: (shiftId) => {
       if (typeof shiftId !== "string") {
         return Promise.reject(new Error("Invalid shift ID"));
