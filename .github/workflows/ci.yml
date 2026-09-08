@@ -32,3 +32,8 @@ jobs:
 
       - name: Build renderer
         run: npm run build
+
+      # The suites drive the real repositories against a database the runner
+      # builds from scratch, so nothing here depends on a developer's machine.
+      - name: Test
+        run: npm test
