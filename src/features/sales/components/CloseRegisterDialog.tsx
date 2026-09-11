@@ -21,6 +21,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Money } from "@/lib/domain";
+import { errorMessage } from "@/lib/errors";
 import { shiftCloseApi } from "@/lib/api";
 import type { ShiftClosePreview } from "@/lib/types";
 import { strings } from "@/lib/i18n/ar";
@@ -70,7 +71,7 @@ export function CloseRegisterDialog({
     } catch (err) {
       toast({
         title: strings.shifts.closeRegisterFailed,
-        description: (err as Error).message,
+        description: errorMessage(err),
         variant: "destructive",
       });
     } finally {
@@ -98,7 +99,7 @@ export function CloseRegisterDialog({
     } catch (err) {
       toast({
         title: strings.shifts.closeRegisterFailed,
-        description: (err as Error).message,
+        description: errorMessage(err),
         variant: "destructive",
       });
       setBusy(false);

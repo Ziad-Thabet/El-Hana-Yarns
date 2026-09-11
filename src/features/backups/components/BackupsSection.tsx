@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { strings } from "@/lib/i18n/ar";
+import { errorMessage } from "@/lib/errors";
 import { surfaces, typography, tables } from "@/lib/theme/styles";
 import { cn } from "@/lib/utils";
 import type { BackupEntry, BackupReason } from "@/lib/types";
@@ -61,7 +62,7 @@ export function BackupsSection() {
     } catch (err) {
       toast({
         title: strings.backups.createFailed,
-        description: (err as Error).message,
+        description: errorMessage(err),
         variant: "destructive",
       });
     }
@@ -85,7 +86,7 @@ export function BackupsSection() {
     } catch (err) {
       toast({
         title: strings.backups.restoreFailed,
-        description: (err as Error).message,
+        description: errorMessage(err),
         variant: "destructive",
       });
     }

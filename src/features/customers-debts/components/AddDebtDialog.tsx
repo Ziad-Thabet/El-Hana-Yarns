@@ -23,6 +23,7 @@ import { useAddDebt } from "@/features/customers-debts/hooks";
 import type { Customer } from "@/features/customers-debts/types";
 import { PremiumButton } from "@/components/ui/premium";
 import { strings } from "@/lib/i18n/ar";
+import { errorMessage } from "@/lib/errors";
 import { getLanguage } from "@/lib/i18n/store";
 
 interface AddDebtDialogProps {
@@ -92,7 +93,7 @@ export function AddDebtDialog({ customers }: AddDebtDialogProps) {
     } catch (err) {
       toast({
         title: strings.common.error,
-        description: (err as Error).message,
+        description: errorMessage(err),
         variant: "destructive",
       });
     } finally {

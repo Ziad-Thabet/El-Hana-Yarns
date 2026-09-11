@@ -208,7 +208,11 @@ check("getAllInvoices hydrates", all.length === actual.length);
 const one = salesDB.getById(actual[0].id);
 check("getById matches the list entry", JSON.stringify(one) === JSON.stringify(actual[0]));
 const pos = salesDB.getBySource("pos");
-check("getBySource hydrates", pos.length > 0 && pos[0].items.length === 2);
+// Look for this suite's own invoice rather than whatever sorted first: the
+// fixture carries demo sales on the same date, and their ordering against
+// these depends on the time of day the suite happens to run.
+const mine = pos.find((i) => i.cashier === "T");
+check("getBySource hydrates", pos.length > 0 && !!mine && mine.items.length === 2);
 
 console.log("\n=== IN(...) chunking beyond the SQLite parameter limit ===");
 const many = db.prepare("SELECT * FROM sale_invoices WHERE voided=0").all();

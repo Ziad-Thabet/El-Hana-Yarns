@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Loader2 } from "lucide-react";
 import { strings } from "@/lib/i18n/ar";
+import { errorMessage } from "@/lib/errors";
 import { PremiumButton } from "@/components/ui/premium";
 import type { Employee } from "@/features/employees/types";
 import { useUpdateEmployee } from "@/features/employees/hooks";
@@ -58,7 +59,7 @@ export function EditEmployeeDialog({
       onSaved();
       onClose();
     } catch (err) {
-      setError((err as Error).message);
+      setError(errorMessage(err));
     } finally {
       setLoading(false);
     }

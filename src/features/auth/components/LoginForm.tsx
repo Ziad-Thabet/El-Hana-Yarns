@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import { PremiumButton } from "@/components/ui/premium";
 import { strings } from "@/lib/i18n/ar";
+import { errorMessage } from "@/lib/errors";
 import { cards, typography } from "@/lib/theme/styles";
 import { cn } from "@/lib/utils";
 import { useLogin } from "@/features/auth/hooks";
@@ -28,7 +29,7 @@ export function LoginForm({ brandIcon, onSuccess }: LoginFormProps) {
       await login.mutateAsync(form);
       onSuccess();
     } catch (err) {
-      setError((err as Error).message || strings.auth.loginError);
+      setError(errorMessage(err) || strings.auth.loginError);
     } finally {
       setLoading(false);
     }

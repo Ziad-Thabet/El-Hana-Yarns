@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import { PremiumButton } from "@/components/ui/premium";
 import { strings } from "@/lib/i18n/ar";
+import { errorMessage } from "@/lib/errors";
 import { cards } from "@/lib/theme/styles";
 import { cn } from "@/lib/utils";
 import { useRegister } from "@/features/auth/hooks";
@@ -51,7 +52,7 @@ export function RegisterForm({ brandIcon, onSuccess }: RegisterFormProps) {
       });
       onSuccess();
     } catch (err) {
-      setError((err as Error).message || strings.auth.registerError);
+      setError(errorMessage(err) || strings.auth.registerError);
     } finally {
       setLoading(false);
     }

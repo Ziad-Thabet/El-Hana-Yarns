@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Loader2 } from "lucide-react";
 import { strings } from "@/lib/i18n/ar";
+import { errorMessage } from "@/lib/errors";
 import { PremiumButton } from "@/components/ui/premium";
 import { useCreateEmployee } from "@/features/employees/hooks";
 import { Field } from "./Field";
@@ -90,10 +91,9 @@ export function AddEmployeeDialog({
       onCreated();
       handleClose();
     } catch (err) {
-      const msg = (err as Error).message;
-      if (msg.includes("username_already_exists"))
-        setError(strings.employees.usernameExists);
-      else setError(msg);
+      // The taken-username case used to be special-cased here by matching on
+      // the raw code; every code is translated centrally now.
+      setError(errorMessage(err));
     } finally {
       setLoading(false);
     }

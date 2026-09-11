@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { PremiumButton } from "@/components/ui/premium";
 import { useCreateDriver, useUpdateDriver } from "@/features/drivers/hooks";
 import { strings } from "@/lib/i18n/ar";
+import { errorMessage } from "@/lib/errors";
 import type { Driver, DriverType } from "@/features/drivers/types";
 import { DRIVER_TYPE_LABELS } from "@/features/drivers/driverHelpers";
 
@@ -85,7 +86,7 @@ export function AddEditDriverDialog({
     } catch (err) {
       toast({
         title: strings.common.error,
-        description: (err as Error).message,
+        description: errorMessage(err),
         variant: "destructive",
       });
     } finally {

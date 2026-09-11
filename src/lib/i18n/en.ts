@@ -687,6 +687,23 @@ export const strings = {
     exportedTo: "Saved to {path}",
     exportFailed: "Could not export the report",
   },
+  errors: {
+    unknown: "Something went wrong — try again",
+    codes: {
+      username_too_short: "That username is too short",
+      username_already_exists: "That username is already taken",
+      password_too_short: "That password is too short",
+      user_not_found: "That user no longer exists",
+      missing_required_fields: "Some required fields are empty",
+      no_fields_to_update: "Nothing was changed",
+      category_has_expenses: "This category has expenses recorded against it and cannot be deleted",
+      shift_not_found: "That shift no longer exists",
+      shift_not_found_or_already_closed: "That shift is already closed, or no longer exists",
+      counted_cash_required: "Enter the cash you counted",
+      counted_cash_negative: "The counted cash cannot be negative",
+    },
+  },
+
   audit: {
     title: "Activity log",
     subtitle:

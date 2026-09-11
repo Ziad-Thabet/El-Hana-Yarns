@@ -9,6 +9,7 @@ import {
   useAddPurchasePayment,
 } from "@/features/purchases/hooks";
 import { useCategories } from "@/lib/hooks";
+import { errorMessage } from "@/lib/errors";
 import type { PurchaseInvoice } from "@/features/purchases/types";
 import type { InvoiceItem, PaymentMethod } from "@/lib/types";
 import { StatusFilterBar } from "./StatusFilterBar";
@@ -128,7 +129,7 @@ const PurchaseInvoices = ({ isAdmin }: PurchaseInvoicesProps) => {
     } catch (err) {
       toast({
         title: strings.purchases.saveError,
-        description: (err as Error).message,
+        description: errorMessage(err),
         variant: "destructive",
       });
     } finally {
@@ -178,7 +179,7 @@ const PurchaseInvoices = ({ isAdmin }: PurchaseInvoicesProps) => {
     } catch (err) {
       toast({
         title: strings.common.error,
-        description: (err as Error).message,
+        description: errorMessage(err),
         variant: "destructive",
       });
     } finally {

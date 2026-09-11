@@ -19,6 +19,7 @@ import {
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Money } from "@/lib/domain";
+import { errorMessage } from "@/lib/errors";
 import {
   useAddDebtPayment,
   useAddBulkDebtPayment,
@@ -138,7 +139,7 @@ export function CustomerDebtDetailsDialog({
     } catch (err) {
       toast({
         title: strings.common.error,
-        description: (err as Error).message,
+        description: errorMessage(err),
         variant: "destructive",
       });
     } finally {
@@ -198,7 +199,7 @@ export function CustomerDebtDetailsDialog({
     } catch (err) {
       toast({
         title: strings.common.error,
-        description: (err as Error).message,
+        description: errorMessage(err),
         variant: "destructive",
       });
     } finally {

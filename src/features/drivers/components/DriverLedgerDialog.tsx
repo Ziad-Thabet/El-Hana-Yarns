@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Loader2, Wallet } from "lucide-react";
 import { Money } from "@/lib/domain";
+import { errorMessage } from "@/lib/errors";
 import { useToast } from "@/hooks/use-toast";
 import { SuccessButton } from "@/components/ui/premium";
 import {
@@ -90,7 +91,7 @@ export function DriverLedgerDialog({
     } catch (err) {
       toast({
         title: strings.common.error,
-        description: (err as Error).message,
+        description: errorMessage(err),
         variant: "destructive",
       });
     } finally {

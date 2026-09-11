@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 import { ProductModel, Money } from "@/lib/domain";
+import { errorMessage } from "@/lib/errors";
 import { productsApi } from "@/lib/api";
 import { useProductsForSales } from "@/lib/hooks";
 import {
@@ -304,7 +305,7 @@ const SalesInterface = ({
     } catch (err) {
       toast({
         title: strings.common.genericError,
-        description: (err as Error).message,
+        description: errorMessage(err),
         variant: "destructive",
       });
     } finally {

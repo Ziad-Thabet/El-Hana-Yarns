@@ -39,7 +39,7 @@ const AUDIT_DESCRIPTORS = {
     // The variance is the whole point of the record: a drawer that was short
     // should be answerable later without reopening the shift.
     summary: (_p, r) =>
-      `إقفال وردية — المعدود ${r?.countedCash ?? 0} / المتوقع ${r?.expectedCash ?? 0}` +
+      `إقفال شيفت — المعدود ${r?.countedCash ?? 0} / المتوقع ${r?.expectedCash ?? 0}` +
       ` (فرق ${r?.cashVariance ?? 0})`,
   },
   "returns:void": {
