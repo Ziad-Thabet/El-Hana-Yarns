@@ -99,7 +99,11 @@ export interface SalesReportStats {
 
 export interface TopProduct {
   name: string;
+  /** Net of returns, like every other revenue figure. */
   revenue: number;
+  grossRevenue: number;
+  returned: number;
+  /** In the product's own stock unit — kilos for weighted items, not lines. */
   sold: number;
 }
 
@@ -107,8 +111,14 @@ export interface ProductPerformance {
   name: string;
   barcode: string | null;
   category: string;
+  /** Net of returns. */
   revenue: number;
+  grossRevenue: number;
+  returned: number;
+  /** Net of returns, in the product's own stock unit. */
   quantity: number;
+  soldQuantity: number;
+  returnedQuantity: number;
   averagePrice: number;
   estimatedCost: number;
   grossProfit: number;

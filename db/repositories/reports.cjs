@@ -1,5 +1,6 @@
 const { safeNumber, round } = require("../helpers/numbers.cjs");
 const { buildDateFilter, sqlWhere } = require("../helpers/dateFilter.cjs");
+const { stockUnitsSql } = require("../../shared/stockUnits.cjs");
 const {
   formatIsoDate,
   normalizeIsoDate,
@@ -115,18 +116,103 @@ function createReportsDB(
   function getCollectedRevenue(fromIso, toIso) {
     return getCollectedRevenueBreakdown(fromIso, toIso).total;
   }
+  /**
+   * Average purchase cost per unit, keyed every way a sale line might be
+   * matched to it.
+   *
+   * Matching used to be by barcode, falling back to the product's name. That
+   * fails whenever the two sides spell the item differently — a supplier's
+   * barcode against the shop's own, a renamed product — and a failed match is
+   * silent: the cost comes out as zero, so the margin reads as 100% and the
+   * shop is told every sale is pure profit. Both tables carry `product_id`
+   * now, which is the only key that cannot drift, so it is tried first.
+   */
+  /**
+   * What came back, per product, over a period.
+   *
+   * Returned goods stopped being revenue the moment they came back, and a
+   * restocked unit was never sold, so both the money and the quantity have to
+   * come off the per-product figures — otherwise the headline reads net while
+   * the product breakdown underneath it reads gross, and the two cannot be
+   * reconciled by anyone looking at them.
+   *
+   * Cost is treated separately: a restocked unit is back on the shelf, so its
+   * cost is not cost of goods sold. Damaged stock that was refunded without
+   * restocking stays a cost, because the shop really did lose it.
+   */
+  function getReturnsByProduct(fromIso, toIso) {
+    const db = getDb();
+    const filter = buildDateFilter(fromIso, toIso, "r");
+    const rows = db
+      .prepare(
+        `SELECT ri.product_id AS productId,
+                ri.name AS name,
+                COALESCE(SUM(ri.line_total), 0) AS value,
+                COALESCE(SUM(ri.quantity), 0) AS quantity,
+                COALESCE(SUM(CASE WHEN ri.restocked = 1 THEN ri.quantity ELSE 0 END), 0) AS restocked
+           FROM sale_return_items ri
+           JOIN sale_returns r ON r.id = ri.return_id
+           JOIN sale_invoices si ON si.id = r.invoice_id
+          WHERE si.voided = 0
+          ${filter.clause ? "AND " + filter.clause : ""}
+          GROUP BY COALESCE(ri.product_id, ri.name)`,
+      )
+      .all(...filter.params);
+    const map = new Map();
+    for (const row of rows) {
+      const entry = {
+        value: round(safeNumber(row.value)),
+        quantity: safeNumber(row.quantity),
+        restocked: safeNumber(row.restocked),
+      };
+      // Indexed both ways, because the aggregates below group by whichever of
+      // the two they have.
+      if (row.productId) map.set(row.productId, entry);
+      if (row.name && !map.has(row.name)) map.set(row.name, entry);
+    }
+    return map;
+  }
+
+  /** The entry for a row, whichever key it carries. */
+  function returnsFor(map, row) {
+    for (const key of [row.productId, row.name, row.itemKey]) {
+      if (key && map.has(key)) return map.get(key);
+    }
+    return { value: 0, quantity: 0, restocked: 0 };
+  }
+
   function getPurchaseCostMap() {
     const db = getDb();
     const rows = db
       .prepare(
-        "SELECT COALESCE(NULLIF(barcode, ''), product_name) as itemKey, SUM(purchase_price * quantity) as totalCost, SUM(quantity) as totalQty FROM purchase_invoice_items GROUP BY itemKey",
+        `SELECT product_id as productId,
+                NULLIF(barcode, '') as barcode,
+                product_name as name,
+                SUM(purchase_price * quantity) as totalCost,
+                SUM(quantity) as totalQty
+           FROM purchase_invoice_items
+          GROUP BY COALESCE(product_id, NULLIF(barcode, ''), product_name)`,
       )
       .all();
-    return rows.reduce((map, row) => {
-      const key = row.itemKey || "unknown";
-      map[key] = row.totalQty ? row.totalCost / row.totalQty : 0;
-      return map;
-    }, {});
+    const map = {};
+    for (const row of rows) {
+      if (!row.totalQty) continue;
+      const perUnit = row.totalCost / row.totalQty;
+      for (const key of [row.productId, row.barcode, row.name]) {
+        // First writer wins per key, so a product_id match is never displaced
+        // by a name collision from a different supplier line.
+        if (key && map[key] === undefined) map[key] = perUnit;
+      }
+    }
+    return map;
+  }
+
+  /** The cost of one unit of a sold line, tried by id, then barcode, then name. */
+  function costPerUnitFor(costMap, row) {
+    for (const key of [row.productId, row.barcode, row.itemKey, row.name]) {
+      if (key && costMap[key] !== undefined) return costMap[key];
+    }
+    return 0;
   }
   function getPaymentAnalytics() {
     const db = getDb();
@@ -259,7 +345,7 @@ function createReportsDB(
                 COALESCE(si.barcode, si.name) as itemKey,
                 si.name as name,
                 COALESCE(p.category, 'غير مصنفة') as category,
-                SUM(si.quantity) as quantity,
+                SUM(${stockUnitsSql("si")}) as quantity,
                 SUM(si.line_total) as revenue
          FROM sale_invoice_items si
          JOIN sale_invoices s ON si.invoice_id = s.id
@@ -325,9 +411,13 @@ function createReportsDB(
       )
       .get(...dateFilter.params);
     const collectedBreakdown = getCollectedRevenueBreakdown(from, to);
+    const topProductReturns = getReturnsByProduct(from, to);
     const topProducts = db
       .prepare(
-        `SELECT si.name as name, SUM(si.line_total) as revenue, SUM(si.quantity) as sold
+        `SELECT si.name as name,
+                si.product_id as productId,
+                SUM(si.line_total) as revenue,
+                SUM(${stockUnitsSql("si")}) as sold
          FROM sale_invoice_items si
          JOIN sale_invoices s ON si.invoice_id = s.id
          ${sqlWhere(withVoidedFilter(dateFilter.clause))}
@@ -336,46 +426,61 @@ function createReportsDB(
          LIMIT 10`,
       )
       .all(...dateFilter.params)
-      .map((row) => ({
-        name: row.name,
-        revenue: safeNumber(row.revenue),
-        sold: safeNumber(row.sold),
-      }));
+      .map((row) => {
+        const back = returnsFor(topProductReturns, row);
+        return {
+          name: row.name,
+          revenue: round(safeNumber(row.revenue) - back.value),
+          grossRevenue: safeNumber(row.revenue),
+          sold: round(safeNumber(row.sold) - back.quantity, 3),
+          returned: back.value,
+        };
+      });
     const productRows = db
       .prepare(
         `SELECT COALESCE(si.barcode, si.name) as itemKey,
+                si.product_id as productId,
                 si.name as name,
                 si.barcode as barcode,
                 COALESCE(p.category, 'غير مصنفة') as category,
                 SUM(si.line_total) as revenue,
-                SUM(si.quantity) as quantity,
+                SUM(${stockUnitsSql("si")}) as quantity,
                 AVG(si.price) as averagePrice,
                 COUNT(DISTINCT si.invoice_id) as invoiceCount
          FROM sale_invoice_items si
          JOIN sale_invoices s ON si.invoice_id = s.id
          LEFT JOIN products p ON si.product_id = p.id
          ${sqlWhere(withVoidedFilter(dateFilter.clause))}
-         GROUP BY itemKey
+         GROUP BY COALESCE(si.product_id, si.barcode, si.name)
          ORDER BY revenue DESC`,
       )
       .all(...dateFilter.params);
     const purchaseCostMap = getPurchaseCostMap();
+    const returnsByProduct = getReturnsByProduct(from, to);
     const productPerformance = productRows.map((row) => {
-      const costKey =
-        row.barcode && purchaseCostMap[row.barcode] ? row.barcode : row.itemKey;
-      const costPerUnit = purchaseCostMap[costKey] ?? 0;
-      const estimatedCost = costPerUnit * safeNumber(row.quantity);
-      const grossProfit = safeNumber(row.revenue) - estimatedCost;
+      const back = returnsFor(returnsByProduct, row);
+      const costPerUnit = costPerUnitFor(purchaseCostMap, row);
+      const netQuantity = round(safeNumber(row.quantity) - back.quantity, 3);
+      const netRevenue = round(safeNumber(row.revenue) - back.value);
+      // Restocked units are on the shelf again, so they are not a cost.
+      const estimatedCost = round(
+        costPerUnit * Math.max(0, safeNumber(row.quantity) - back.restocked),
+      );
+      const grossProfit = netRevenue - estimatedCost;
       return {
         name: row.name,
         barcode: row.barcode || null,
         category: row.category,
-        revenue: safeNumber(row.revenue),
-        quantity: safeNumber(row.quantity),
+        revenue: netRevenue,
+        grossRevenue: safeNumber(row.revenue),
+        returned: back.value,
+        quantity: netQuantity,
+        soldQuantity: safeNumber(row.quantity),
+        returnedQuantity: back.quantity,
         averagePrice: round(row.averagePrice),
         estimatedCost: round(estimatedCost),
         grossProfit: round(grossProfit),
-        grossMargin: row.revenue ? round((grossProfit / row.revenue) * 100) : 0,
+        grossMargin: netRevenue ? round((grossProfit / netRevenue) * 100) : 0,
         invoiceCount: safeNumber(row.invoiceCount),
       };
     });
@@ -389,7 +494,7 @@ function createReportsDB(
       .prepare(
         `SELECT COALESCE(p.category, 'غير مصنفة') as category,
                 SUM(si.line_total) as revenue,
-                SUM(si.quantity) as quantity,
+                SUM(${stockUnitsSql("si")}) as quantity,
                 COUNT(DISTINCT si.invoice_id) as invoices
          FROM sale_invoice_items si
          JOIN sale_invoices s ON si.invoice_id = s.id
@@ -629,8 +734,11 @@ function createReportsDB(
       0,
     );
     const inventoryValueCost = products.reduce((sum, product) => {
-      const key = product.barcode || product.name;
-      const unitCost = purchaseCostMap[key] ?? 0;
+      const unitCost = costPerUnitFor(purchaseCostMap, {
+        productId: product.id,
+        barcode: product.barcode,
+        name: product.name,
+      });
       return sum + safeNumber(product.stock) * unitCost;
     }, 0);
     const movement = getInventoryMovement(90);
@@ -639,8 +747,11 @@ function createReportsDB(
       .map((product) => ({
         ...product,
         estimatedCost: round(
-          (purchaseCostMap[product.barcode || product.name] ?? 0) *
-            safeNumber(product.stock),
+          costPerUnitFor(purchaseCostMap, {
+            productId: product.id,
+            barcode: product.barcode,
+            name: product.name,
+          }) * safeNumber(product.stock),
         ),
       }))
       .sort((a, b) => b.stock - a.stock)
@@ -1168,11 +1279,13 @@ function createReportsDB(
     const combinedTrend = Object.values(trendMap).sort((a, b) =>
       a.date < b.date ? -1 : 1,
     );
+    const topProductReturns = getReturnsByProduct(from, to);
     const topProducts = db
       .prepare(
         `SELECT si.name as name,
+                si.product_id as productId,
                 SUM(si.line_total) as revenue,
-                SUM(si.quantity) as sold
+                SUM(${stockUnitsSql("si")}) as sold
          FROM sale_invoice_items si
          JOIN sale_invoices s ON si.invoice_id = s.id
          ${sqlWhere(withVoidedFilter(dateFilter.clause))}
@@ -1182,11 +1295,16 @@ function createReportsDB(
       )
 
       .all(...dateFilter.params)
-      .map((row) => ({
-        name: row.name,
-        revenue: safeNumber(row.revenue),
-        sold: safeNumber(row.sold),
-      }));
+      .map((row) => {
+        const back = returnsFor(topProductReturns, row);
+        return {
+          name: row.name,
+          revenue: round(safeNumber(row.revenue) - back.value),
+          grossRevenue: safeNumber(row.revenue),
+          sold: round(safeNumber(row.sold) - back.quantity, 3),
+          returned: back.value,
+        };
+      });
     const categoryBreakdown = db
       .prepare(
         `SELECT COALESCE(p.category, 'غير مصنفة') as category,
@@ -1246,17 +1364,25 @@ function createReportsDB(
     const productRows = db
       .prepare(
         `SELECT COALESCE(si.barcode, si.name) as itemKey,
+                si.product_id as productId,
+                si.barcode as barcode,
+                si.name as name,
                 SUM(si.line_total) as revenue,
-                SUM(si.quantity) as quantity
+                SUM(${stockUnitsSql("si")}) as quantity
          FROM sale_invoice_items si
          JOIN sale_invoices s ON si.invoice_id = s.id
          ${sqlWhere(withVoidedFilter(dateFilter.clause))}
-         GROUP BY itemKey`,
+         GROUP BY COALESCE(si.product_id, si.barcode, si.name)`,
       )
       .all(...dateFilter.params);
+    const dashboardReturnsByProduct = getReturnsByProduct(from, to);
     const totalCost = productRows.reduce((sum, row) => {
-      const costPerUnit = purchaseCostMap[row.itemKey] ?? 0;
-      return sum + costPerUnit * safeNumber(row.quantity);
+      const costPerUnit = costPerUnitFor(purchaseCostMap, row);
+      // A restocked unit is back on the shelf, so it is not a cost of goods
+      // sold. Damaged stock refunded without restocking stays a cost.
+      const back = returnsFor(dashboardReturnsByProduct, row);
+      const soldForGood = Math.max(0, safeNumber(row.quantity) - back.restocked);
+      return sum + costPerUnit * soldForGood;
     }, 0);
     const grossProfit = round(totalRevenue - totalCost);
     const grossMargin = totalRevenue
