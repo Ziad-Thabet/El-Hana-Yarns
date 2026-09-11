@@ -35,7 +35,10 @@ export interface PaymentAnalytics {
 
 export interface SalesTrendPoint {
   date: IsoDate;
+  /** Sold less returned on that day. */
   revenue: number;
+  grossRevenue: number;
+  returned: number;
   invoices: number;
 }
 
@@ -50,6 +53,11 @@ export interface SalesComparison {
     from: IsoDate;
     to: IsoDate;
     revenue: number;
+    /** Invoice totals less what came back. */
+    bookedRevenue: number;
+    grossRevenue: number;
+    returned: number;
+    returnCount: number;
     invoices: number;
   };
   previousPeriod: {
@@ -82,6 +90,11 @@ export interface PurchasesComparison {
 export interface SalesReportStats {
   total: number;
   count: number;
+  /** Invoice totals less what came back. */
+  bookedRevenue: number;
+  grossRevenue: number;
+  returned: number;
+  returnCount: number;
 }
 
 export interface TopProduct {
@@ -291,6 +304,11 @@ export interface DebtsReport {
 
 export interface DashboardKPIs {
   revenue: number;
+  /** Invoice totals less what came back. */
+  bookedRevenue: number;
+  grossRevenue: number;
+  returned: number;
+  returnCount: number;
   invoices: number;
   spend: number;
   unpaidPurchases: number;

@@ -98,7 +98,18 @@ export function SalesReportView({ data }: { data: SalesReport }) {
           color={T.revenue}
           icon={TrendingUp}
           accent
-          sub={comparisons && <GrowthBadge value={comparisons.revenueChange} />}
+          sub={
+            <div className="flex flex-col gap-1">
+              {comparisons && <GrowthBadge value={comparisons.revenueChange} />}
+              {stats.returned > 0 && (
+                <span className="text-[10.5px] text-muted-foreground/60">
+                  {strings.reports.returnedInPeriod
+                    .replace("{amount}", fmt(stats.returned))
+                    .replace("{count}", String(stats.returnCount))}
+                </span>
+              )}
+            </div>
+          }
         />
         <StatCard
           label={strings.reports.invoiceCount}
