@@ -165,9 +165,24 @@ function createReturnsDB(getDb, productsDB) {
         throw new Error("لم يتم تحديد أي أصناف للاسترجاع");
       }
 
-      const refundTotal = round(
-        prepared.reduce((sum, p) => sum + p.lineTotal, 0),
+      // Line values, which is what the customer was charged per unit.
+      const lineValue = round(prepared.reduce((sum, p) => sum + p.lineTotal, 0));
+
+      // ...but never more than the invoice took in the first place. The line
+      // totals and the invoice total can disagree — a discount applied to the
+      // whole sale, or historical data where the two were written separately —
+      // and refunding the line values then hands back money the shop never
+      // received. The cap is what is left of the invoice after earlier returns.
+      const invoiceTotal = safeNumber(
+        db.prepare("SELECT total FROM sale_invoices WHERE id=?").get(invoiceId)?.total,
       );
+      const alreadyReturned = safeNumber(
+        db
+          .prepare("SELECT COALESCE(SUM(total),0) AS t FROM sale_returns WHERE invoice_id=?")
+          .get(invoiceId)?.t,
+      );
+      const refundable = round(Math.max(0, invoiceTotal - alreadyReturned));
+      const refundTotal = round(Math.min(lineValue, refundable));
       const { date, time } = nowDateTime();
       const returnId = generateId("sret");
       const returnNumber = generateReturnNumber(db, date);
@@ -215,6 +230,20 @@ function createReturnsDB(getDb, productsDB) {
             }
           });
         }
+      }
+
+      // If the cap bit, scale the recorded line values down with it so the
+      // return's own lines still add up to its total.
+      if (lineValue > refundTotal && lineValue > 0) {
+        const ratio = refundTotal / lineValue;
+        let allocated = 0;
+        prepared.forEach((entry, index) => {
+          const isLast = index === prepared.length - 1;
+          entry.lineTotal = isLast
+            ? round(refundTotal - allocated)
+            : round(entry.lineTotal * ratio);
+          allocated = round(allocated + entry.lineTotal);
+        });
       }
 
       const totalReturnableValue = returnable.reduce(

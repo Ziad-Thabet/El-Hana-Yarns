@@ -181,19 +181,26 @@ function createReportsDB(
     return { value: 0, quantity: 0, restocked: 0 };
   }
 
-  function getPurchaseCostMap() {
+  function getPurchaseCostMap(asOfIso = null) {
     const db = getDb();
+    // Costs are averaged over purchases made up to the end of the period being
+    // reported. Without the bound, buying the same yarn cheaper next month
+    // would quietly rewrite last month's margin, and a report run twice would
+    // not agree with itself.
+    const bound = normalizeIsoDate(asOfIso);
     const rows = db
       .prepare(
-        `SELECT product_id as productId,
-                NULLIF(barcode, '') as barcode,
-                product_name as name,
-                SUM(purchase_price * quantity) as totalCost,
-                SUM(quantity) as totalQty
-           FROM purchase_invoice_items
-          GROUP BY COALESCE(product_id, NULLIF(barcode, ''), product_name)`,
+        `SELECT pii.product_id as productId,
+                NULLIF(pii.barcode, '') as barcode,
+                pii.product_name as name,
+                SUM(pii.purchase_price * pii.quantity) as totalCost,
+                SUM(pii.quantity) as totalQty
+           FROM purchase_invoice_items pii
+           JOIN purchase_invoices pi ON pi.id = pii.invoice_id
+          ${bound ? "WHERE pi.date <= ?" : ""}
+          GROUP BY COALESCE(pii.product_id, NULLIF(pii.barcode, ''), pii.product_name)`,
       )
-      .all();
+      .all(...(bound ? [bound] : []));
     const map = {};
     for (const row of rows) {
       if (!row.totalQty) continue;
@@ -455,7 +462,7 @@ function createReportsDB(
          ORDER BY revenue DESC`,
       )
       .all(...dateFilter.params);
-    const purchaseCostMap = getPurchaseCostMap();
+    const purchaseCostMap = getPurchaseCostMap(to);
     const returnsByProduct = getReturnsByProduct(from, to);
     const productPerformance = productRows.map((row) => {
       const back = returnsFor(returnsByProduct, row);
@@ -1360,7 +1367,7 @@ function createReportsDB(
         name: row.name,
         remaining: safeNumber(row.remaining),
       }));
-    const purchaseCostMap = getPurchaseCostMap();
+    const purchaseCostMap = getPurchaseCostMap(to);
     const productRows = db
       .prepare(
         `SELECT COALESCE(si.barcode, si.name) as itemKey,

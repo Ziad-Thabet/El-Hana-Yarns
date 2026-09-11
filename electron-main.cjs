@@ -492,12 +492,24 @@ function registerHandlers() {
   // ── SALES ─────────────────────────────────
   handle("sales:getAll", () => salesDB.getAll());
   handle("sales:getById", (id) => salesDB.getById(id));
-  handle("sales:complete", (checkoutData, _session) =>
-    salesDB.complete({
+  handle("sales:complete", (checkoutData, _session) => {
+    // The renderer passes the shift it believes is open. If it passes none —
+    // a stale window, a session resumed after an auto-close — the takings
+    // would belong to no shift at all and be invisible to every shift summary
+    // and to the drawer count at closing. Fall back to the caller's own open
+    // shift. Deliberately never creates one: a sale should not be able to
+    // open a shift nobody started.
+    let shiftId = checkoutData.shiftId ?? null;
+    if (!shiftId && _session?.userId) {
+      const today = formatDateYMD(new Date());
+      shiftId = shiftsDB.getActive(_session.userId, today)?.id ?? null;
+    }
+    return salesDB.complete({
       ...checkoutData,
+      shiftId,
       cashier: _session?.displayName ?? checkoutData.cashier,
-    }),
-  );
+    });
+  });
   handle("sales:getBySource", ({ source, from, to }) =>
     salesDB.getBySource(source, from, to),
   );
