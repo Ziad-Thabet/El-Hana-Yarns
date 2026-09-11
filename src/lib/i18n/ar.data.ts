@@ -902,6 +902,7 @@ export const strings = {
     trueNetProfit: "الصافي الحقيقي",
     trueNetProfitDesc: "الإيرادات ناقص كل المصروفات الفعلية",
     debtCollectionIncluded: "من ضمنها {amount} تحصيل ديون قديمة",
+    returnedInPeriod: "منها {amount} مرتجعات ({count} مرتجع)",
     invoiceCount: "عدد الفواتير",
     avgInvoiceValue: "متوسط قيمة الفاتورة",
     actualExpensesOut: "المصروفات الفعلية — خارج من المحل",

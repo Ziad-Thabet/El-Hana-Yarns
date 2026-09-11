@@ -906,6 +906,7 @@ export const strings = {
     trueNetProfit: "True Net Profit",
     trueNetProfitDesc: "Revenue minus all actual expenses",
     debtCollectionIncluded: "Includes {amount} in collected old debts",
+    returnedInPeriod: "including {amount} returned ({count} returns)",
     invoiceCount: "Invoice Count",
     avgInvoiceValue: "Average Invoice Value",
     actualExpensesOut: "Actual Expenses — Cash Out",

@@ -119,6 +119,13 @@ export function DashboardReportView({ data }: { data: DashboardReport }) {
           sub={
             <div className="flex flex-col gap-1">
               {comparison && <GrowthBadge value={comparison.revenueChange} />}
+              {kpis.returned > 0 && (
+                <span className="text-[10.5px] text-muted-foreground/60">
+                  {strings.reports.returnedInPeriod
+                    .replace("{amount}", fmt(kpis.returned))
+                    .replace("{count}", String(kpis.returnCount))}
+                </span>
+              )}
               {kpis.collectedFromDebtSettlement > 0 && (
                 <span className="text-[10.5px] text-muted-foreground/60">
                   {strings.reports.debtCollectionIncluded.replace(

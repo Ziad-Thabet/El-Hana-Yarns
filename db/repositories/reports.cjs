@@ -71,6 +71,47 @@ function createReportsDB(
       debtSettlement: round(debtSettlement),
     };
   }
+  /**
+   * What came back over a period.
+   *
+   * Taken from `sale_returns` rather than from the refund payment records: a
+   * return against an unpaid invoice reduces the customer's debt instead of
+   * paying money out, and the sale is worth less either way. Collected-revenue
+   * figures already net the cash refunds, so they must not subtract this as
+   * well — this is for the booked figures, which are invoice totals.
+   */
+  function getReturnsTotal(fromIso, toIso) {
+    const db = getDb();
+    const filter = buildDateFilter(fromIso, toIso, "r");
+    const row = db
+      .prepare(
+        `SELECT COALESCE(SUM(r.total),0) as total, COUNT(*) as count
+           FROM sale_returns r
+           JOIN sale_invoices si ON si.id = r.invoice_id
+          WHERE si.voided = 0
+          ${filter.clause ? "AND " + filter.clause : ""}`,
+      )
+      .get(...filter.params);
+    return { total: round(safeNumber(row?.total)), count: safeNumber(row?.count) };
+  }
+
+  /** The same, per day, for the trend line. */
+  function getReturnsByDate(fromIso, toIso) {
+    const db = getDb();
+    const filter = buildDateFilter(fromIso, toIso, "r");
+    const rows = db
+      .prepare(
+        `SELECT r.date as date, COALESCE(SUM(r.total),0) as total
+           FROM sale_returns r
+           JOIN sale_invoices si ON si.id = r.invoice_id
+          WHERE si.voided = 0
+          ${filter.clause ? "AND " + filter.clause : ""}
+          GROUP BY r.date`,
+      )
+      .all(...filter.params);
+    return new Map(rows.map((r) => [r.date, round(safeNumber(r.total))]));
+  }
+
   function getCollectedRevenue(fromIso, toIso) {
     return getCollectedRevenueBreakdown(fromIso, toIso).total;
   }
@@ -159,11 +200,18 @@ function createReportsDB(
          ORDER BY s.date ASC`,
       )
       .all(...filter.params);
-    return rows.map((row) => ({
-      date: row.date,
-      revenue: safeNumber(row.revenue),
-      invoices: safeNumber(row.invoices),
-    }));
+    // A day's takings are what was sold less what came back that day.
+    const returned = getReturnsByDate(from, to);
+    return rows.map((row) => {
+      const back = returned.get(row.date) ?? 0;
+      return {
+        date: row.date,
+        revenue: round(safeNumber(row.revenue) - back),
+        grossRevenue: round(safeNumber(row.revenue)),
+        returned: back,
+        invoices: safeNumber(row.invoices),
+      };
+    });
   }
   function getCollectedRevenueTrend(from, to) {
     const db = getDb();
@@ -331,7 +379,12 @@ function createReportsDB(
         invoiceCount: safeNumber(row.invoiceCount),
       };
     });
-    const totalRevenue = safeNumber(stats.total);
+    const returnsInPeriod = getReturnsTotal(from, to);
+    // Booked revenue is what the invoices say; a returned sale is not revenue,
+    // so the figure the report leads with subtracts it. The gross is kept
+    // alongside, because "sold 505, 127 came back" is the story, not "378".
+    const grossRevenue = safeNumber(stats.total);
+    const totalRevenue = round(grossRevenue - returnsInPeriod.total);
     const categoryPerformance = db
       .prepare(
         `SELECT COALESCE(p.category, 'غير مصنفة') as category,
@@ -385,6 +438,11 @@ function createReportsDB(
           `SELECT COALESCE(SUM(total),0) as total, COUNT(*) as count FROM sale_invoices WHERE voided = 0 AND date BETWEEN ? AND ?`,
         )
         .get(previous.previousStart, previous.previousEnd);
+      const prevReturns = getReturnsTotal(
+        previous.previousStart,
+        previous.previousEnd,
+      );
+      const prevBooked = round(safeNumber(prevStats.total) - prevReturns.total);
       const prevCollectedRevenue = getCollectedRevenue(
         previous.previousStart,
         previous.previousEnd,
@@ -394,21 +452,24 @@ function createReportsDB(
           from: dateFilter.from,
           to: dateFilter.to,
           revenue: collectedBreakdown.total,
-          bookedRevenue: safeNumber(stats.total),
+          bookedRevenue: totalRevenue,
+          grossRevenue,
+          returned: returnsInPeriod.total,
+          returnCount: returnsInPeriod.count,
           invoices: safeNumber(stats.count),
         },
         previousPeriod: {
           from: previous.previousStart,
           to: previous.previousEnd,
           revenue: prevCollectedRevenue,
-          bookedRevenue: safeNumber(prevStats.total),
+          bookedRevenue: prevBooked,
           invoices: safeNumber(prevStats.count),
         },
         revenueChange: computePercentChange(
           collectedBreakdown.total,
           prevCollectedRevenue,
         ),
-        bookedRevenueChange: computePercentChange(stats.total, prevStats.total),
+        bookedRevenueChange: computePercentChange(totalRevenue, prevBooked),
         invoiceChange: computePercentChange(stats.count, prevStats.count),
       };
     })();
@@ -437,7 +498,10 @@ function createReportsDB(
       type: "sales",
       stats: {
         total: collectedBreakdown.total,
-        bookedRevenue: safeNumber(stats.total),
+        bookedRevenue: totalRevenue,
+        grossRevenue,
+        returned: returnsInPeriod.total,
+        returnCount: returnsInPeriod.count,
         collectedFromCheckout: collectedBreakdown.checkout,
         collectedFromDebtSettlement: collectedBreakdown.debtSettlement,
         count: safeNumber(stats.count),
@@ -912,6 +976,11 @@ function createReportsDB(
          ${sqlWhere(withVoidedFilter(dateFilter.clause))}`,
       )
       .get(...dateFilter.params);
+    // What the shop kept: invoice totals less what came back. Declared here
+    // because the period comparison below reads it.
+    const dashboardReturns = getReturnsTotal(from, to);
+    const grossBookedRevenue = safeNumber(salesStats.revenue);
+    const totalRevenue = round(grossBookedRevenue - dashboardReturns.total);
     const purchaseFilter = buildDateFilter(from, to, "p");
     const purchaseStats = db
       .prepare(
@@ -1024,6 +1093,10 @@ function createReportsDB(
            FROM sale_invoices WHERE voided = 0 AND date BETWEEN ? AND ?`,
         )
         .get(previous.previousStart, previous.previousEnd);
+      const prevBookedRevenue = round(
+        safeNumber(prevSales.revenue) -
+          getReturnsTotal(previous.previousStart, previous.previousEnd).total,
+      );
       const prevPurchases = db
         .prepare(
           `SELECT COALESCE(SUM(total),0) as spend
@@ -1040,8 +1113,8 @@ function createReportsDB(
           prevCollectedRevenue,
         ),
         bookedRevenueChange: computePercentChange(
-          salesStats.revenue,
-          prevSales.revenue,
+          totalRevenue,
+          prevBookedRevenue,
         ),
         invoiceChange: computePercentChange(
           salesStats.invoices,
@@ -1054,7 +1127,7 @@ function createReportsDB(
         previousPeriod: {
           from: previous.previousStart,
           to: previous.previousEnd,
-          revenue: safeNumber(prevSales.revenue),
+          revenue: prevBookedRevenue,
           collectedRevenue: prevCollectedRevenue,
           invoices: safeNumber(prevSales.invoices),
           spend: safeNumber(prevPurchases.spend),
@@ -1114,7 +1187,6 @@ function createReportsDB(
         revenue: safeNumber(row.revenue),
         sold: safeNumber(row.sold),
       }));
-    const totalRevenue = safeNumber(salesStats.revenue);
     const categoryBreakdown = db
       .prepare(
         `SELECT COALESCE(p.category, 'غير مصنفة') as category,
@@ -1194,7 +1266,10 @@ function createReportsDB(
       type: "dashboard",
       kpis: {
         revenue: collectedRevenue,
-        bookedRevenue: safeNumber(salesStats.revenue),
+        bookedRevenue: totalRevenue,
+        grossRevenue: grossBookedRevenue,
+        returned: dashboardReturns.total,
+        returnCount: dashboardReturns.count,
         invoices: safeNumber(salesStats.invoices),
         spend: safeNumber(purchaseStats.spend),
         unpaidPurchases: safeNumber(purchaseStats.unpaid),
@@ -1206,7 +1281,7 @@ function createReportsDB(
         outOfStock: safeNumber(inventoryStats.outOfStock),
         lowStock: safeNumber(inventoryStats.lowStock),
         averageTransactionValue: salesStats.invoices
-          ? round(salesStats.revenue / salesStats.invoices)
+          ? round(totalRevenue / salesStats.invoices)
           : 0,
         expensesTotal,
         salariesTotal: round(salariesTotal),
