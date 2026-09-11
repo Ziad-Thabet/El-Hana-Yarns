@@ -34,6 +34,8 @@ db.pragma("journal_mode = WAL");
 db.pragma("foreign_keys = ON");
 
 // ── helper ──────────────────────────────────────────
+const round2 = (value) => Math.round((Number(value) || 0) * 100) / 100;
+
 function id(prefix) {
   return `${prefix}-DEMO-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 }
@@ -499,12 +501,17 @@ function seed() {
       "INSERT OR IGNORE INTO sale_invoice_items (id, invoice_id, product_id, name, price, quantity, barcode, is_weighted, line_total) VALUES (?,?,?,?,?,?,?,0,?)",
     );
     for (const s of sales) {
+      // The header total is derived, never typed: an invoice whose total
+      // disagrees with its own lines is not data any report can reconcile,
+      // and it made returns refund more than the sale had charged.
+      const lineSum = round2(s.items.reduce((sum, it) => sum + it.lineTotal, 0));
+      s.total = lineSum;
       insertSaleWithShiftSource.run(
         s.id,
         s.invoiceNumber,
         s.date,
         s.time,
-        s.total,
+        lineSum,
         s.cashier,
         s.shiftId ?? null,
         null,
@@ -571,18 +578,38 @@ function seed() {
     // ── Purchase Invoices ─────────────────────────
     const pinv1Id = id("pinv");
     const pinv2Id = id("pinv");
-    db.prepare(
-      "INSERT OR IGNORE INTO purchase_invoices (id, invoice_number, supplier, date, time, total, status, paid_amount) VALUES (?,?,?,?,?,?,?,?)",
-    ).run(
-      pinv1Id,
-      "PI-DEMO-001",
-      "مورد تجريبي 1",
-      fmt(lastWeek),
-      "09:00 ص",
-      2500,
-      "paid",
-      2500,
+    // Purchase lines carry their own total and their link to the product, the
+    // way the application writes them. Without the link nothing can cost a
+    // sale; without the total the invoice cannot be reconciled with its lines.
+    const productIdByName = new Map(
+      db.prepare("SELECT id, name FROM products").all().map((p) => [p.name, p.id]),
     );
+    const barcodeByName = new Map(
+      db.prepare("SELECT name, barcode FROM products").all().map((p) => [p.name, p.barcode]),
+    );
+    const insertPurchaseItem = (invoiceId, i) =>
+      db
+        .prepare(
+          `INSERT OR IGNORE INTO purchase_invoice_items
+             (id, invoice_id, product_id, product_name, barcode, quantity, unit,
+              purchase_price, item_total, category)
+           VALUES (?,?,?,?,?,?,?,?,?,?)`,
+        )
+        .run(
+          id("pitem"),
+          invoiceId,
+          productIdByName.get(i.name) ?? null,
+          i.name,
+          barcodeByName.get(i.name) ?? null,
+          i.qty,
+          i.unit,
+          i.price,
+          round2(i.qty * i.price),
+          i.cat,
+        );
+    const purchaseTotal = (items) =>
+      round2(items.reduce((sum, i) => sum + i.qty * i.price, 0));
+
     const pItems1 = [
       {
         name: "صوف ميرينو أبيض 100جم",
@@ -606,23 +633,24 @@ function seed() {
         cat: "خيوط صوف",
       },
     ];
-    for (const i of pItems1) {
-      db.prepare(
-        "INSERT OR IGNORE INTO purchase_invoice_items (id, invoice_id, product_name, barcode, quantity, unit, purchase_price, category) VALUES (?,?,?,?,?,?,?,?)",
-      ).run(id("pitem"), pinv1Id, i.name, null, i.qty, i.unit, i.price, i.cat);
-    }
+    const PI1_TOTAL = purchaseTotal(pItems1);
     db.prepare(
       "INSERT OR IGNORE INTO purchase_invoices (id, invoice_number, supplier, date, time, total, status, paid_amount) VALUES (?,?,?,?,?,?,?,?)",
     ).run(
-      pinv2Id,
-      "PI-DEMO-002",
-      "مورد تجريبي 2",
-      fmt(yesterday),
-      "11:00 ص",
-      1800,
-      "partial",
-      900,
+      pinv1Id,
+      "PI-DEMO-001",
+      "مورد تجريبي 1",
+      fmt(lastWeek),
+      "09:00 ص",
+      PI1_TOTAL,
+      "paid",
+      PI1_TOTAL,
     );
+    for (const i of pItems1) insertPurchaseItem(pinv1Id, i);
+    // Paid in full, so the money has to exist as a record.
+    db.prepare(
+      "INSERT OR IGNORE INTO payment_records (id, ref_id, ref_type, amount, date, time, method) VALUES (?,?,?,?,?,?,?)",
+    ).run(id("pay"), pinv1Id, "purchase", PI1_TOTAL, fmt(lastWeek), "09:30 ص", "cash");
     const pItems2 = [
       {
         name: "قطن مرسرايز أبيض 50جم",
@@ -646,11 +674,20 @@ function seed() {
         cat: "خيوط مزخرفة",
       },
     ];
-    for (const i of pItems2) {
-      db.prepare(
-        "INSERT OR IGNORE INTO purchase_invoice_items (id, invoice_id, product_name, barcode, quantity, unit, purchase_price, category) VALUES (?,?,?,?,?,?,?,?)",
-      ).run(id("pitem"), pinv2Id, i.name, null, i.qty, i.unit, i.price, i.cat);
-    }
+    const PI2_TOTAL = purchaseTotal(pItems2);
+    db.prepare(
+      "INSERT OR IGNORE INTO purchase_invoices (id, invoice_number, supplier, date, time, total, status, paid_amount) VALUES (?,?,?,?,?,?,?,?)",
+    ).run(
+      pinv2Id,
+      "PI-DEMO-002",
+      "مورد تجريبي 2",
+      fmt(yesterday),
+      "11:00 ص",
+      PI2_TOTAL,
+      "partial",
+      900,
+    );
+    for (const i of pItems2) insertPurchaseItem(pinv2Id, i);
     db.prepare(
       "INSERT OR IGNORE INTO payment_records (id, ref_id, ref_type, amount, date, time, method) VALUES (?,?,?,?,?,?,?)",
     ).run(
