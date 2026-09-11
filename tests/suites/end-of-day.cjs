@@ -163,7 +163,7 @@ const outPath = path.join(workDir, "report.xlsx");
   check("all expected sheets present", names.length === 11, names.join(", "));
   for (const expected of ["الملخص", "المبيعات", "أصناف المبيعات", "حركة المخزون",
     "تنبيهات المخزون", "المرتجعات", "الطلبات الأونلاين", "الديون", "المصروفات",
-    "المشتريات", "الورديات"]) {
+    "المشتريات", "الشيفتات"]) {
     if (!names.includes(expected)) check(`sheet "${expected}" present`, false);
   }
   check("summary carries the configured shop name",

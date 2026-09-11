@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 
 import { Money } from "@/lib/domain";
+import { errorMessage } from "@/lib/errors";
 import { PremiumButton } from "@/components/ui/premium";
 import { useToast } from "@/hooks/use-toast";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
@@ -128,7 +129,7 @@ export function OnlineOrderDetailDialog({
     } catch (err) {
       toast({
         title: strings.common.error,
-        description: (err as Error).message,
+        description: errorMessage(err),
         variant: "destructive",
       });
     } finally {
@@ -149,7 +150,7 @@ export function OnlineOrderDetailDialog({
     } catch (err) {
       toast({
         title: strings.common.error,
-        description: (err as Error).message,
+        description: errorMessage(err),
         variant: "destructive",
       });
     } finally {
@@ -226,7 +227,7 @@ export function OnlineOrderDetailDialog({
     } catch (err) {
       toast({
         title: strings.common.error,
-        description: (err as Error).message,
+        description: errorMessage(err),
         variant: "destructive",
       });
     } finally {
@@ -243,7 +244,7 @@ export function OnlineOrderDetailDialog({
     } catch (err) {
       toast({
         title: strings.common.error,
-        description: (err as Error).message,
+        description: errorMessage(err),
         variant: "destructive",
       });
     } finally {
@@ -366,7 +367,7 @@ export function OnlineOrderDetailDialog({
     } catch (err) {
       toast({
         title: strings.common.error,
-        description: (err as Error).message,
+        description: errorMessage(err),
         variant: "destructive",
       });
     } finally {
@@ -423,7 +424,7 @@ export function OnlineOrderDetailDialog({
     } catch (err) {
       toast({
         title: strings.common.error,
-        description: (err as Error).message,
+        description: errorMessage(err),
         variant: "destructive",
       });
     } finally {
@@ -792,7 +793,7 @@ export function OnlineOrderDetailDialog({
                               } catch (err) {
                                 toast({
                                   title: strings.common.error,
-                                  description: (err as Error).message,
+                                  description: errorMessage(err),
                                   variant: "destructive",
                                 });
                               } finally {
@@ -839,7 +840,7 @@ export function OnlineOrderDetailDialog({
                           } catch (err) {
                             toast({
                               title: strings.common.error,
-                              description: (err as Error).message,
+                              description: errorMessage(err),
                               variant: "destructive",
                             });
                           } finally {

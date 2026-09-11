@@ -24,6 +24,7 @@ import {
 } from "@/lib/config/category-colors";
 import { SuccessButton } from "@/components/ui/premium";
 import { strings } from "@/lib/i18n/ar";
+import { errorMessage } from "@/lib/errors";
 interface CategoryManagementProps {
   categories: Category[];
   onCategoriesUpdate?: (categories: Category[]) => void;
@@ -84,7 +85,7 @@ const CategoryManagement = ({
     } catch (err) {
       toast({
         title: strings.common.genericError,
-        description: (err as Error).message,
+        description: errorMessage(err),
         variant: "destructive",
       });
     } finally {
@@ -99,7 +100,7 @@ const CategoryManagement = ({
     } catch (err) {
       toast({
         title: strings.common.deleteError,
-        description: (err as Error).message,
+        description: errorMessage(err),
         variant: "destructive",
       });
     }

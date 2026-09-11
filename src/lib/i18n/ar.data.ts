@@ -664,9 +664,9 @@ export const strings = {
       "shift.staleHours":
         "الشيفت اللي مفيش عليه حركة المدة دي بيتقفل تلقائياً",
       "shift.openingFloat":
-        "المبلغ اللي بيبدأ بيه الدرج كل يوم. بيتسجل على الوردية وقت فتحها، فتغييره دلوقتي مش بيأثر على ورديات قديمة",
+        "المبلغ اللي بيبدأ بيه الدرج كل يوم. بيتسجل على الشيفت وقت فتحه، فتغييره دلوقتي مش بيأثر على الشيفتات القديمة",
       "shift.varianceNoteThreshold":
-        "لو الفرق بين المعدود والمتوقع أكبر من الرقم ده، البرنامج هيطلب سبب قبل إقفال الوردية",
+        "لو الفرق بين المعدود والمتوقع أكبر من الرقم ده، البرنامج هيطلب سبب قبل إقفال الشيفت",
       "receipt.widthMm": "بيتطبق على الطباعة والمعاينة مع بعض",
     },
   },
@@ -674,7 +674,7 @@ export const strings = {
   endOfDay: {
     title: "تقرير نهاية اليوم",
     subtitle:
-      "ملف إكسل يجمع المبيعات والمرتجعات وحركة المخزون والديون والمصروفات والورديات لليوم المحدد.",
+      "ملف إكسل يجمع المبيعات والمرتجعات وحركة المخزون والديون والمصروفات والشيفتات لليوم المحدد.",
     from: "من",
     to: "إلى",
     exportButton: "تصدير إكسل",
@@ -683,6 +683,23 @@ export const strings = {
     exportedTo: "تم الحفظ في {path}",
     exportFailed: "تعذّر تصدير التقرير",
   },
+  errors: {
+    unknown: "حصلت مشكلة، حاول تاني",
+    codes: {
+      username_too_short: "اسم المستخدم قصير أوي",
+      username_already_exists: "اسم المستخدم ده مستخدم قبل كده",
+      password_too_short: "كلمة المرور قصيرة أوي",
+      user_not_found: "المستخدم ده مش موجود",
+      missing_required_fields: "في بيانات ناقصة، كمّل الحقول المطلوبة",
+      no_fields_to_update: "مفيش حاجة اتغيرت",
+      category_has_expenses: "التصنيف ده عليه مصروفات، منفعش يتشال",
+      shift_not_found: "الشيفت ده مش موجود",
+      shift_not_found_or_already_closed: "الشيفت اتقفل خلاص أو مش موجود",
+      counted_cash_required: "لازم تكتب الكاش اللي عديته",
+      counted_cash_negative: "الكاش المعدود ميقدرش يكون بالسالب",
+    },
+  },
+
   audit: {
     title: "سجل العمليات",
     subtitle:
@@ -741,7 +758,7 @@ export const strings = {
       address: "العنوان",
       invoiceId: "رقم الفاتورة",
       invoiceNumber: "رقم الفاتورة",
-      shiftId: "رقم الوردية",
+      shiftId: "رقم الشيفت",
       orderId: "رقم الطلب",
       driverId: "رقم المندوب",
       employeeId: "رقم الموظف",
@@ -767,7 +784,7 @@ export const strings = {
     actions: {
       "sale.return": "مرتجع",
       "sale.void": "إلغاء فاتورة",
-      "shift.close": "إقفال وردية",
+      "shift.close": "إقفال شيفت",
       "stock.adjust": "تعديل مخزون",
       "product.create": "إضافة منتج",
       "product.update": "تعديل منتج",

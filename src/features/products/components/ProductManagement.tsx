@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ProductModel, UnitHelper } from "@/lib/domain";
+import { errorMessage } from "@/lib/errors";
 import CategoryManagement from "@/features/categories/components/CategoryManagement";
 import { productsApi } from "@/lib/api";
 import {
@@ -81,7 +82,7 @@ const ProductManagement = ({ isAdmin }: ProductManagementProps) => {
     } catch (err) {
       toast({
         title: strings.products.barcodeGenerateError,
-        description: (err as Error).message,
+        description: errorMessage(err),
         variant: "destructive",
       });
     } finally {
@@ -152,7 +153,7 @@ const ProductManagement = ({ isAdmin }: ProductManagementProps) => {
     } catch (err) {
       toast({
         title: strings.common.genericError,
-        description: (err as Error).message,
+        description: errorMessage(err),
         variant: "destructive",
       });
     } finally {
@@ -188,7 +189,7 @@ const ProductManagement = ({ isAdmin }: ProductManagementProps) => {
     } catch (err) {
       toast({
         title: strings.common.deleteError,
-        description: (err as Error).message,
+        description: errorMessage(err),
         variant: "destructive",
       });
     }

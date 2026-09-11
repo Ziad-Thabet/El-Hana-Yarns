@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/table";
 import { CalendarClock } from "lucide-react";
 import { Money } from "@/lib/domain";
+import { errorMessage } from "@/lib/errors";
 import { strings } from "@/lib/i18n/ar";
 import { useToast } from "@/hooks/use-toast";
 import { useSetPurchaseInvoiceDueDate } from "@/features/purchases/hooks";
@@ -69,7 +70,7 @@ export const PurchaseInvoiceDetailsDialog = ({
     } catch (err) {
       toast({
         title: strings.common.error,
-        description: (err as Error).message,
+        description: errorMessage(err),
         variant: "destructive",
       });
     }

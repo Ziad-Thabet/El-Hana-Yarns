@@ -23,6 +23,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Money } from "@/lib/domain";
+import { errorMessage } from "@/lib/errors";
 import { strings } from "@/lib/i18n/ar";
 import { typography } from "@/lib/theme/styles";
 import { cn } from "@/lib/utils";
@@ -145,7 +146,7 @@ export function ReturnDialog({
     } catch (err) {
       toast({
         title: strings.returns.failed,
-        description: (err as Error).message,
+        description: errorMessage(err),
         variant: "destructive",
       });
     }
@@ -167,7 +168,7 @@ export function ReturnDialog({
     } catch (err) {
       toast({
         title: strings.returns.failed,
-        description: (err as Error).message,
+        description: errorMessage(err),
         variant: "destructive",
       });
     }

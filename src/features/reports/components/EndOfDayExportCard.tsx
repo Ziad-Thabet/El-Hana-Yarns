@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { strings } from "@/lib/i18n/ar";
+import { errorMessage } from "@/lib/errors";
 import { typography } from "@/lib/theme/styles";
 import { cn } from "@/lib/utils";
 import { formatDateYMD } from "../../../../shared/dateRules.mjs";
@@ -38,7 +39,7 @@ export function EndOfDayExportCard() {
     } catch (err) {
       toast({
         title: strings.endOfDay.exportFailed,
-        description: (err as Error).message,
+        description: errorMessage(err),
         variant: "destructive",
       });
     }

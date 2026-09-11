@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { strings } from "@/lib/i18n/ar";
+import { errorMessage } from "@/lib/errors";
 import { surfaces, typography } from "@/lib/theme/styles";
 import { cn } from "@/lib/utils";
 import type { SettingEntry, SettingGroup, SettingValue } from "@/lib/types";
@@ -83,7 +84,7 @@ export function SettingsSection() {
     } catch (err) {
       toast({
         title: strings.settings.saveFailed,
-        description: (err as Error).message,
+        description: errorMessage(err),
         variant: "destructive",
       });
     }
@@ -101,7 +102,7 @@ export function SettingsSection() {
     } catch (err) {
       toast({
         title: strings.settings.saveFailed,
-        description: (err as Error).message,
+        description: errorMessage(err),
         variant: "destructive",
       });
     }
