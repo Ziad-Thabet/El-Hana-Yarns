@@ -29,7 +29,12 @@ function mapShift(row) {
   };
 }
 const STALE_SHIFT_HOURS = 10;
-function createShiftsDB(getDb, settingsDB = null, paymentMethodsDB = null) {
+function createShiftsDB(
+  getDb,
+  settingsDB = null,
+  paymentMethodsDB = null,
+  cashMovementsDB = null,
+) {
   const staleHours = () =>
     settingsDB?.getNumber("shift.staleHours") ?? STALE_SHIFT_HOURS;
   function getOpenShift(userId, date) {
@@ -103,7 +108,14 @@ function createShiftsDB(getDb, settingsDB = null, paymentMethodsDB = null) {
     for (const [code, amount] of Object.entries(totals.byCode)) {
       if (codes.has(code)) collected = round(collected + amount);
     }
-    return round((shiftRow?.opening_float ?? 0) + collected);
+    // Money that entered or left the drawer for reasons other than a sale —
+    // an expense paid out of the till, change brought in. Without this term
+    // the drawer reads short by exactly whatever the shop paid out, and the
+    // variance blames the cashier for the electricity bill.
+    const movements = shiftRow?.id
+      ? cashMovementsDB?.netForShift(shiftRow.id) ?? { net: 0 }
+      : { net: 0 };
+    return round((shiftRow?.opening_float ?? 0) + collected + movements.net);
   }
 
   function calcShiftInvoiceCount(shiftId) {
@@ -289,6 +301,11 @@ function createShiftsDB(getDb, settingsDB = null, paymentMethodsDB = null) {
       const totals = calcShiftTotals(shiftId);
       const expected = expectedCashFor(shift, totals);
       const counted = round(countedCash ?? 0);
+      const movements = cashMovementsDB?.netForShift(shiftId) ?? {
+        paidIn: 0,
+        paidOut: 0,
+        net: 0,
+      };
       return {
         shiftId,
         openingFloat: round(shift.opening_float ?? 0),
@@ -297,6 +314,9 @@ function createShiftsDB(getDb, settingsDB = null, paymentMethodsDB = null) {
         variance: round(counted - expected),
         invoiceCount: calcShiftInvoiceCount(shiftId),
         byCode: totals.byCode,
+        // Shown so the cashier can see why the expected figure is what it is.
+        cashPaidIn: movements.paidIn,
+        cashPaidOut: movements.paidOut,
         noteThreshold: round(
           settingsDB?.getNumber("shift.varianceNoteThreshold") ?? 20,
         ),

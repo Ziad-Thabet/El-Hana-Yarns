@@ -58,4 +58,6 @@ export const QK = {
   driverLedger: (driverId: string, from?: string, to?: string) =>
     ["drivers", "ledger", driverId, from, to] as const,
   shiftSummary: (shiftId: string) => ["shifts", "summary", shiftId] as const,
+  cash: ["cash"] as const,
+  cashByShift: (shiftId: string) => ["cash", "shift", shiftId] as const,
 } as const;

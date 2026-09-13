@@ -304,6 +304,31 @@ function buildWorkbook(data) {
     addTotalsRow(expenses, { category: "الإجمالي", amount: data.summary.expensesTotal });
   }
 
+  // The drawer's own movements. Without these the day's cash cannot be
+  // reconciled: the till holds what was taken in, less what was handed out.
+  const drawer = addSheet(
+    workbook,
+    "حركة الدرج",
+    [
+      { header: "التاريخ", key: "date", width: 12 },
+      { header: "الوقت", key: "time", width: 10 },
+      { header: "الحركة", key: "directionLabel", width: 12 },
+      { header: "المبلغ", key: "amount", width: 14, style: { numFmt: MONEY } },
+      { header: "السبب", key: "reason", width: 34 },
+      { header: "بواسطة", key: "createdByName", width: 16 },
+    ],
+    (data.cashMovements ?? []).map((m) => ({
+      ...m,
+      directionLabel: m.direction === "out" ? "صرف" : "إيداع",
+    })),
+  );
+  if ((data.cashMovements ?? []).length) {
+    addTotalsRow(drawer, {
+      directionLabel: "الصافي",
+      amount: (data.summary.cashPaidIn ?? 0) - (data.summary.cashPaidOut ?? 0),
+    });
+  }
+
   addSheet(
     workbook,
     "المشتريات",

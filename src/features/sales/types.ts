@@ -53,6 +53,10 @@ export interface ShiftClosePreview {
   variance: number;
   invoiceCount: number;
   byCode: Record<string, number>;
+  /** Cash put into the drawer during the shift for reasons other than sales. */
+  cashPaidIn: number;
+  /** Cash taken out of it — an expense paid from the till, say. */
+  cashPaidOut: number;
   /** Above this difference, closing asks for an explanation. */
   noteThreshold: number;
 }
@@ -62,4 +66,24 @@ export interface ShiftSummary {
   vodafone_cash: number;
   instapay: number;
   totalInvoices: number;
+}
+
+/** A movement of cash in or out of the drawer that is not a sale. */
+export interface CashMovement {
+  id: string;
+  direction: "in" | "out";
+  /** Always positive; `direction` carries the sign. */
+  amount: number;
+  reason: string;
+  date: string;
+  time: string;
+  shiftId: string | null;
+  /** Set when the movement pays for something the system already knows about. */
+  refType: string | null;
+  refId: string | null;
+  createdBy: string;
+  createdByName: string | null;
+  createdAt: string;
+  /** Negative for money taken out, so a list can be summed directly. */
+  signedAmount: number;
 }

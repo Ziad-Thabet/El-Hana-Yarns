@@ -334,6 +334,7 @@ function registerHandlers() {
     auditDB,
     rolesDB,
     endOfDayDB,
+    cashMovementsDB,
   } = db;
   function getTodayDateYMD() {
     return formatDateYMD(new Date());
@@ -652,9 +653,29 @@ function registerHandlers() {
   handle("expenses:getCategories", () => expensesDB.getCategories());
   handle("expenses:createCategory", (name) => expensesDB.createCategory(name));
   handle("expenses:deleteCategory", (id) => expensesDB.deleteCategory(id));
-  handle("expenses:add", (data, _session) =>
-    expensesDB.add({ ...data, createdBy: _session?.userId ?? "admin" }),
-  );
+  handle("expenses:add", (data, session) => {
+    const expense = expensesDB.add({ ...data, createdBy: session?.userId ?? data.createdBy });
+    // An expense paid out of the till is also a movement of cash. Recording it
+    // as both keeps the expense report and the drawer count telling the same
+    // story — before this, paying a bill from the till made the drawer short.
+    if (data?.paidFromDrawer && expense) {
+      const today = formatDateYMD(new Date());
+      const shiftId = session?.userId
+        ? (shiftsDB.getActive(session.userId, today)?.id ?? null)
+        : null;
+      cashMovementsDB.record({
+        direction: "out",
+        amount: expense.amount,
+        reason: expense.description || expense.category_name || "مصروف",
+        shiftId,
+        refType: "expense",
+        refId: expense.id,
+        createdBy: session?.userId ?? null,
+        date: expense.date,
+      });
+    }
+    return expense;
+  });
   handle("expenses:getAll", ({ from, to } = {}) => expensesDB.getAll(from, to));
   handle("expenses:delete", (id) => expensesDB.delete(id));
   handle("expenses:getNetSummary", ({ from, to }) =>
@@ -730,6 +751,27 @@ function registerHandlers() {
       },
     };
   });
+  // ── CASH DRAWER ───────────────────────────
+  // The actor and the shift both come from the session: who took money out of
+  // the till is not something the renderer gets to assert.
+  handle("cash:record", ({ direction, amount, reason, refType, refId }, session) => {
+    const today = formatDateYMD(new Date());
+    const shiftId = session?.userId
+      ? (shiftsDB.getActive(session.userId, today)?.id ?? null)
+      : null;
+    return cashMovementsDB.record({
+      direction,
+      amount,
+      reason,
+      shiftId,
+      refType: refType ?? null,
+      refId: refId ?? null,
+      createdBy: session?.userId ?? null,
+    });
+  });
+  handle("cash:getAll", ({ from, to } = {}) => cashMovementsDB.getAll(from, to));
+  handle("cash:getByShift", (shiftId) => cashMovementsDB.getByShift(shiftId));
+
   // ── AUDIT ─────────────────────────────────
   handle("audit:query", (filters) => auditDB.query(filters ?? {}));
   handle("audit:getFilterOptions", () => auditDB.getFilterOptions());
@@ -927,6 +969,7 @@ if (!gotSingleInstanceLock) {
       auditDB: dbModule.auditDB,
       rolesDB: dbModule.rolesDB,
       endOfDayDB: dbModule.endOfDayDB,
+      cashMovementsDB: dbModule.cashMovementsDB,
       applyRuntimeSettings: dbModule.applyRuntimeSettings,
       backups: dbModule.backups,
     };

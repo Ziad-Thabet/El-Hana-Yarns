@@ -3,6 +3,7 @@ import { Sparkles, Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -38,6 +39,9 @@ export function AddExpenseForm({
   const [formDesc, setFormDesc] = useState("");
   const [formSaving, setFormSaving] = useState(false);
   const [formError, setFormError] = useState("");
+  // Most shop expenses are paid out of the till, and that is exactly the
+  // money the drawer count needs to know about.
+  const [paidFromDrawer, setPaidFromDrawer] = useState(true);
 
   useEffect(() => {
     if (!formCatId && categories.length > 0) setFormCatId(categories[0].id);
@@ -56,6 +60,7 @@ export function AddExpenseForm({
         amount: parseFloat(formAmount),
         date: formDate,
         description: formDesc || undefined,
+        paidFromDrawer,
       });
       setFormAmount("");
       setFormDesc("");
@@ -139,6 +144,21 @@ export function AddExpenseForm({
             />
           </div>
         </div>
+        <label className="flex items-start gap-2.5 cursor-pointer">
+          <Checkbox
+            checked={paidFromDrawer}
+            onCheckedChange={(v) => setPaidFromDrawer(v === true)}
+            className="mt-0.5"
+          />
+          <span>
+            <span className="text-sm font-medium">
+              {strings.cashDrawer.paidFromDrawer}
+            </span>
+            <span className={cn(typography.caption, "block")}>
+              {strings.cashDrawer.paidFromDrawerHint}
+            </span>
+          </span>
+        </label>
         {formError && (
           <p className="text-sm font-medium text-destructive">{formError}</p>
         )}

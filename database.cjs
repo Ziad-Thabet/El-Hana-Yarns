@@ -34,6 +34,9 @@ const {
   createPaymentMethodsDB,
 } = require("./db/repositories/paymentMethods.cjs");
 const { createEndOfDayDB } = require("./db/repositories/endOfDay.cjs");
+const {
+  createCashMovementsDB,
+} = require("./db/repositories/cashMovements.cjs");
 
 const isDev = !app.isPackaged;
 
@@ -967,7 +970,9 @@ const settingsDB = createSettingsDB(() => db);
 const auditDB = createAuditDB(() => db);
 const rolesDB = createRolesDB(() => db);
 const paymentMethodsDB = createPaymentMethodsDB(() => db);
-const endOfDayDB = createEndOfDayDB(() => db, settingsDB);
+// The cash book, which both the end-of-day figures and the shift close read.
+const cashMovementsDB = createCashMovementsDB(() => db);
+const endOfDayDB = createEndOfDayDB(() => db, settingsDB, cashMovementsDB);
 
 const categoriesDB = createCategoriesDB(() => db);
 
@@ -992,7 +997,12 @@ const reportsDB = createReportsDB(
   settingsDB,
 );
 
-const shiftsDB = createShiftsDB(() => db, settingsDB, paymentMethodsDB);
+const shiftsDB = createShiftsDB(
+  () => db,
+  settingsDB,
+  paymentMethodsDB,
+  cashMovementsDB,
+);
 const ensureActiveShift = createEnsureActiveShift(shiftsDB);
 function globalAutoCloseShifts() {
   try {
@@ -1043,5 +1053,6 @@ module.exports = {
   rolesDB,
   paymentMethodsDB,
   endOfDayDB,
+  cashMovementsDB,
   applyRuntimeSettings,
 };

@@ -47,6 +47,7 @@ import type {
   AuditQueryResult,
   AuditFilterOptions,
   ShiftClosePreview,
+  CashMovement,
 } from "./types";
 async function call<T>(
   fn: () => Promise<{ success: boolean; data?: T; message?: string }>,
@@ -262,6 +263,8 @@ export const expensesApi = {
     amount: number;
     date: string;
     description?: string;
+    /** Records a matching movement out of the till. */
+    paidFromDrawer?: boolean;
   }) => call<Expense>(() => window.api.expenses.add(data)),
   delete: (id: string) => call(() => window.api.expenses.delete(id)),
   createCategory: (name: string) =>
@@ -373,6 +376,20 @@ export const auditApi = {
   getFilterOptions: () =>
     call<AuditFilterOptions>(() => window.api.audit.getFilterOptions()),
 };
+// CASH DRAWER
+export const cashApi = {
+  record: (
+    direction: "in" | "out",
+    amount: number,
+    reason: string,
+    ref?: { refType?: string | null; refId?: string | null },
+  ) => call<CashMovement>(() => window.api.cash.record(direction, amount, reason, ref)),
+  getAll: (from?: string, to?: string) =>
+    call<CashMovement[]>(() => window.api.cash.getAll(from, to)),
+  getByShift: (shiftId: string) =>
+    call<CashMovement[]>(() => window.api.cash.getByShift(shiftId)),
+};
+
 // END OF DAY
 export const endOfDayApi = {
   export: (from: string, to?: string) =>

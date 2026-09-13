@@ -592,6 +592,44 @@ const MIGRATIONS = [
       add("closed_by", "TEXT");
     },
   },
+  {
+    version: 8,
+    name: "cash-movements",
+    up(db) {
+      // Money enters and leaves the drawer for reasons that are not sales: a
+      // supplier paid in cash, the electricity bill, change brought in at the
+      // start of the day, the owner taking takings to the bank. Until now none
+      // of it was recorded, so the expected figure at closing counted only
+      // sales and refunds — and a drawer that was short by exactly the
+      // electricity bill looked like a cashier's error every single day.
+      //
+      // There is no void and no delete. A movement recorded in error is
+      // corrected by an opposing movement, which is how a cash book works and
+      // leaves the mistake and its correction both visible.
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS cash_movements (
+          id          TEXT PRIMARY KEY,
+          direction   TEXT NOT NULL CHECK (direction IN ('in','out')),
+          amount      REAL NOT NULL CHECK (amount > 0),
+          reason      TEXT NOT NULL,
+          date        TEXT NOT NULL,
+          time        TEXT NOT NULL,
+          shift_id    TEXT,
+          -- What this movement pays for, when it pays for something the system
+          -- already knows about: an expense, or a payment against a purchase.
+          ref_type    TEXT,
+          ref_id      TEXT,
+          created_by  TEXT NOT NULL,
+          created_at  TEXT NOT NULL,
+          FOREIGN KEY (shift_id)   REFERENCES shifts(id) ON DELETE SET NULL,
+          FOREIGN KEY (created_by) REFERENCES users(id)  ON DELETE RESTRICT
+        );
+        CREATE INDEX IF NOT EXISTS idx_cash_movements_date  ON cash_movements(date);
+        CREATE INDEX IF NOT EXISTS idx_cash_movements_shift ON cash_movements(shift_id);
+        CREATE INDEX IF NOT EXISTS idx_cash_movements_ref   ON cash_movements(ref_type, ref_id);
+      `);
+    },
+  },
 ];
 
 function getSchemaVersion(db) {

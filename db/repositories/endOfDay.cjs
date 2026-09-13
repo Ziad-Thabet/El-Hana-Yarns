@@ -13,7 +13,7 @@ const { stockUnitsSql } = require("../../shared/stockUnits.cjs");
  * payments and debts per invoice, which is the right shape for a screen and the
  * wrong shape for a report over a whole day.
  */
-function createEndOfDayDB(getDb, settingsDB = null) {
+function createEndOfDayDB(getDb, settingsDB = null, cashMovementsDB = null) {
   const lowStockAt = () =>
     settingsDB?.getNumber("inventory.lowStockThreshold") ?? 10;
 
@@ -397,6 +397,13 @@ function createEndOfDayDB(getDb, settingsDB = null) {
       const grossSales = round(invoices.reduce((s, i) => s + i.total, 0));
       const returnedTotal = round(returnRows.reduce((s, r) => s + r.total, 0));
       const collectedTotal = round(collected.reduce((s, c) => s + c.amount, 0));
+      const cashMovement = cashMovementsDB?.netForRange(from, to) ?? {
+        paidIn: 0,
+        paidOut: 0,
+        net: 0,
+        count: 0,
+      };
+      const cashMovements = cashMovementsDB?.getAll(from, to) ?? [];
       const expensesTotal = round(expenseRows.reduce((s, e) => s + e.amount, 0));
       const purchasesPaid = round(purchaseRows.reduce((s, p) => s + p.paid, 0));
 
@@ -426,8 +433,14 @@ function createEndOfDayDB(getDb, settingsDB = null) {
           debtOutstanding: debtInfo.outstandingTotal,
           expensesTotal,
           purchasesPaid,
-          // Cash actually in hand, before expenses paid out of the drawer.
-          netCashPosition: round(collectedTotal - expensesTotal - purchasesPaid),
+          cashPaidIn: cashMovement.paidIn,
+          cashPaidOut: cashMovement.paidOut,
+          // What the till is actually holding: money taken in, less what was
+          // handed back out of it. Expenses and purchase payments are only
+          // subtracted when they were paid from the drawer — which is what the
+          // movements record. Paying a supplier by transfer does not empty a
+          // till, and this used to assume it did.
+          netCashPosition: round(collectedTotal + cashMovement.net),
           outOfStockCount: alerts.filter((a) => a.status === "out").length,
           lowStockCount: alerts.filter((a) => a.status === "low").length,
         },
@@ -438,6 +451,7 @@ function createEndOfDayDB(getDb, settingsDB = null) {
         alerts,
         onlineOrders: onlineOrders(db, from, to),
         debts: debtInfo,
+        cashMovements,
         expenses: expenseRows,
         purchases: purchaseRows,
         shifts: shifts(db, from, to),

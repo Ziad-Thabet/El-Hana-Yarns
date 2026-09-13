@@ -306,6 +306,7 @@ export const strings = {
     varianceOver: "زيادة",
     varianceShort: "عجز",
     openingFloatNote: "متضمّن رصيد بداية اليوم {amount}.",
+    movementsNote: "ومتحسب فيه {in} داخل و{out} خارج من الدرج.",
     noteOptional: "ملاحظة (اختياري)",
     noteRequired: "ملاحظة (مطلوبة)",
     notePlaceholder: "مثلاً: باقي عميل، أو صرف من الدرج",
@@ -697,7 +698,31 @@ export const strings = {
       shift_not_found_or_already_closed: "الشيفت اتقفل خلاص أو مش موجود",
       counted_cash_required: "لازم تكتب الكاش اللي عديته",
       counted_cash_negative: "الكاش المعدود ميقدرش يكون بالسالب",
+      cash_direction_invalid: "لازم تحدد الحركة: صرف ولا إيداع",
+      cash_amount_required: "اكتب مبلغ أكبر من صفر",
+      cash_reason_required: "اكتب سبب الحركة",
+      cash_actor_required: "مش عارفين مين بيسجل الحركة — اعمل تسجيل دخول تاني",
     },
+  },
+
+  cashDrawer: {
+    title: "حركة نقدية من الدرج",
+    subtitle:
+      "أي فلوس بتدخل أو بتخرج من الدرج من غير بيع — دفع فاتورة، فكة أول اليوم، تسليم فلوس. لازم تتسجل هنا عشان الدرج يظبط وقت الإقفال.",
+    takeOut: "صرف من الدرج",
+    putIn: "إيداع في الدرج",
+    amount: "المبلغ",
+    reason: "السبب",
+    reasonPlaceholder: "مثلاً: فاتورة كهربا، دفع لمورد",
+    record: "تسجيل",
+    recorded: "تم تسجيل الحركة",
+    failed: "تعذّر تسجيل الحركة",
+    todayTitle: "حركات الشيفت",
+    net: "الصافي",
+    button: "حركة نقدية",
+    paidFromDrawer: "مدفوع من الدرج",
+    paidFromDrawerHint:
+      "لو المصروف ده اتدفع كاش من الدرج، علّم هنا عشان يتخصم من المتوقع وقت الإقفال",
   },
 
   audit: {
