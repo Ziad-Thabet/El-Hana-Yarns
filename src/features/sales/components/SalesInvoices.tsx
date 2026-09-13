@@ -2,7 +2,14 @@ import { useState, useMemo, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-import { Receipt, FileText, Loader2, LogOut, Clock } from "lucide-react";
+import {
+  Banknote,
+  Receipt,
+  FileText,
+  Loader2,
+  LogOut,
+  Clock,
+} from "lucide-react";
 
 import { ShiftSummaryCards } from "./ShiftSummaryCards";
 
@@ -10,6 +17,7 @@ import { DateFilterBar } from "./DateFilterBar";
 import { InvoiceList } from "./InvoiceList";
 import { InvoiceDetailDialog } from "./InvoiceDetailDialog";
 import { CloseRegisterDialog } from "./CloseRegisterDialog";
+import { CashDrawerDialog } from "./CashDrawerDialog";
 import { AdminShiftBlock } from "./AdminShiftBlock";
 import { type DatePreset, getPresetRange } from "@/lib/dateFilterPresets";
 import { InvoicePrint } from "@/components/InvoicePrint";
@@ -149,6 +157,7 @@ const SalesInvoices = ({
     });
   }, []);
   const [endShiftOpen, setEndShiftOpen] = useState(false);
+  const [cashDrawerOpen, setCashDrawerOpen] = useState(false);
   const [shiftToEnd, setShiftToEnd] = useState<Shift | null>(null);
   const openEndShiftFor = (shift: Shift) => {
     setShiftToEnd(shift);
@@ -179,6 +188,11 @@ const SalesInvoices = ({
         onClose={() => setDetailOpen(false)}
         onPrint={openPrint}
         isAdmin={isAdmin}
+      />
+      <CashDrawerDialog
+        open={cashDrawerOpen}
+        shiftId={activeShift?.id ?? null}
+        onClose={() => setCashDrawerOpen(false)}
       />
       <CloseRegisterDialog
         open={endShiftOpen}
@@ -211,16 +225,29 @@ const SalesInvoices = ({
             </p>
           )}
         </div>
-        {!isAdmin && hasActiveShift && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:border-destructive shrink-0 transition-all"
-            onClick={() => setEndShiftOpen(true)}
-          >
-            <LogOut className="w-4 h-4 me-1.5" />
-            {strings.shifts.endShift}
-          </Button>
+        {hasActiveShift && (
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCashDrawerOpen(true)}
+              className="transition-all"
+            >
+              <Banknote className="w-4 h-4 me-1.5" />
+              {strings.cashDrawer.button}
+            </Button>
+            {!isAdmin && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:border-destructive transition-all"
+                onClick={() => setEndShiftOpen(true)}
+              >
+                <LogOut className="w-4 h-4 me-1.5" />
+                {strings.shifts.endShift}
+              </Button>
+            )}
+          </div>
         )}
       </div>
       {isAdmin && (

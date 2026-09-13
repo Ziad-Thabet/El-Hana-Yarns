@@ -19,6 +19,7 @@ import type {
   ReportResult,
   Shift,
   ShiftClosePreview,
+  CashMovement,
   ShiftSummary,
   Employee,
   SalaryHistoryRecord,
@@ -308,6 +309,7 @@ declare global {
           amount: number;
           date: string;
           description?: string;
+          paidFromDrawer?: boolean;
         }) => Promise<ApiResponse<Expense>>;
         getAll: (from?: string, to?: string) => Promise<ApiResponse<Expense[]>>;
         delete: (id: string) => Promise<ApiResponse>;
@@ -337,6 +339,20 @@ declare global {
           invoiceId: string,
           reason?: string,
         ) => Promise<ApiResponse<SaleReturnResult>>;
+      };
+
+      cash: {
+        record: (
+          direction: "in" | "out",
+          amount: number,
+          reason: string,
+          ref?: { refType?: string | null; refId?: string | null },
+        ) => Promise<ApiResponse<CashMovement>>;
+        getAll: (
+          from?: string,
+          to?: string,
+        ) => Promise<ApiResponse<CashMovement[]>>;
+        getByShift: (shiftId: string) => Promise<ApiResponse<CashMovement[]>>;
       };
 
       endOfDay: {

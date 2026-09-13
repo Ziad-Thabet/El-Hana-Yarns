@@ -160,9 +160,10 @@ const outPath = path.join(workDir, "report.xlsx");
   const wb = new ExcelJS.Workbook();
   await wb.xlsx.readFile(outPath);
   const names = wb.worksheets.map((w) => w.name);
-  check("all expected sheets present", names.length === 11, names.join(", "));
+  check("all expected sheets present", names.length === 12, names.join(", "));
   for (const expected of ["الملخص", "المبيعات", "أصناف المبيعات", "حركة المخزون",
     "تنبيهات المخزون", "المرتجعات", "الطلبات الأونلاين", "الديون", "المصروفات",
+  "حركة الدرج",
     "المشتريات", "الشيفتات"]) {
     if (!names.includes(expected)) check(`sheet "${expected}" present`, false);
   }
@@ -200,7 +201,7 @@ const outPath = path.join(workDir, "report.xlsx");
   const emptyWb = new ExcelJS.Workbook();
   await emptyWb.xlsx.readFile(emptyPath);
   check("a day with no activity still produces a valid workbook",
-    emptyWb.worksheets.length === 11, `${emptyWb.worksheets.length} sheets`);
+    emptyWb.worksheets.length === 12, `${emptyWb.worksheets.length} sheets`);
   check("empty sheets have only their header",
     emptyWb.getWorksheet("المبيعات").rowCount === 1,
     `${emptyWb.getWorksheet("المبيعات").rowCount}`);

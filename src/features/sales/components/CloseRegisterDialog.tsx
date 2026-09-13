@@ -189,6 +189,10 @@ export function CloseRegisterDialog({
                 "{amount}",
                 Money.from(preview.openingFloat).toString(),
               )}
+              {(preview.cashPaidIn > 0 || preview.cashPaidOut > 0) &&
+                ` ${strings.shifts.movementsNote
+                  .replace("{in}", Money.from(preview.cashPaidIn).toString())
+                  .replace("{out}", Money.from(preview.cashPaidOut).toString())}`}
             </p>
             <div className="space-y-1.5">
               <Label htmlFor="close-note">

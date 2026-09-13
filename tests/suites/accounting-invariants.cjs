@@ -204,6 +204,23 @@ const INVARIANTS = [
     "no product is priced below zero",
     "SELECT id, name, price FROM products WHERE price < 0",
   ],
+  [
+    "every cash movement is a positive amount in a known direction",
+    "SELECT id, direction, amount FROM cash_movements WHERE amount <= 0 OR direction NOT IN ('in','out')",
+  ],
+  [
+    "a movement recorded against an expense matches that expense",
+    `SELECT cm.id, cm.amount, e.amount AS expense_amount
+       FROM cash_movements cm
+       JOIN expenses e ON e.id = cm.ref_id
+      WHERE cm.ref_type = 'expense' AND ABS(cm.amount - e.amount) > 0.005`,
+  ],
+  [
+    "a movement belongs to a shift that exists, or to none at all",
+    `SELECT cm.id FROM cash_movements cm
+      WHERE cm.shift_id IS NOT NULL
+        AND NOT EXISTS (SELECT 1 FROM shifts s WHERE s.id = cm.shift_id)`,
+  ],
 ];
 
 function runInvariants(stage) {

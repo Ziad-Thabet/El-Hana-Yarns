@@ -576,6 +576,33 @@ contextBridge.exposeInMainWorld("api", {
     },
   },
 
+  cash: {
+    record: (direction, amount, reason, ref) => {
+      if (
+        (direction !== "in" && direction !== "out") ||
+        typeof amount !== "number" ||
+        !Number.isFinite(amount) ||
+        typeof reason !== "string"
+      ) {
+        return Promise.reject(new Error("Invalid cash movement data"));
+      }
+      return secureInvoke("cash:record", {
+        direction,
+        amount,
+        reason,
+        refType: ref?.refType ?? null,
+        refId: ref?.refId ?? null,
+      });
+    },
+    getAll: (from, to) => secureInvoke("cash:getAll", { from, to }),
+    getByShift: (shiftId) => {
+      if (typeof shiftId !== "string") {
+        return Promise.reject(new Error("Invalid shift id"));
+      }
+      return secureInvoke("cash:getByShift", shiftId);
+    },
+  },
+
   endOfDay: {
     preview: (from, to) => {
       if (typeof from !== "string") {

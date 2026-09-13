@@ -32,6 +32,16 @@ const AUDIT_DESCRIPTORS = {
     summary: (p, r) =>
       `مرتجع ${r?.returnNumber ?? ""} بقيمة ${r?.total ?? 0}`.trim(),
   },
+  "cash:record": {
+    action: "cash.movement",
+    entity: "cash_movement",
+    entityId: (_p, r) => r?.id ?? null,
+    // Money leaving the till is the single easiest thing to take and the
+    // hardest to notice, so the log says how much, which way, and what for.
+    summary: (p) =>
+      `${p?.direction === "out" ? "صرف من الدرج" : "إيداع في الدرج"} ${p?.amount ?? 0}` +
+      `${p?.reason ? ` — ${p.reason}` : ""}`,
+  },
   "shifts:closeRegister": {
     action: "shift.close",
     entity: "shift",

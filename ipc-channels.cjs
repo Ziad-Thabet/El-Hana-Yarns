@@ -70,6 +70,11 @@ const CHANNEL_PERMISSIONS = {
   "shifts:end": "any",
   "shifts:previewClose": "any",
   "shifts:closeRegister": "any",
+  // A cashier pays the courier out of the till; recording it is part of
+  // working the counter, not an administrative act. Every one is audited.
+  "cash:record": "any",
+  "cash:getAll": "any",
+  "cash:getByShift": "any",
   "shifts:getInvoices": "any",
   "shifts:getAllInvoices": "admin",
   "shifts:getSummary": "any",
@@ -225,6 +230,9 @@ const CHANNEL_CAPABILITY = {
   "shifts:end": "shifts.use",
   "shifts:previewClose": "shifts.use",
   "shifts:closeRegister": "shifts.use",
+  "cash:record": "shifts.use",
+  "cash:getAll": "shifts.use",
+  "cash:getByShift": "shifts.use",
   "shifts:getInvoices": "shifts.use",
   "shifts:getAllInvoices": "shifts.manage",
   "shifts:getSummary": "shifts.use",

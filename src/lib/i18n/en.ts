@@ -307,6 +307,7 @@ export const strings = {
     varianceOver: "Over by",
     varianceShort: "Short by",
     openingFloatNote: "Includes an opening float of {amount}.",
+    movementsNote: "Includes {in} paid in and {out} paid out of the drawer.",
     noteOptional: "Note (optional)",
     noteRequired: "Note (required)",
     notePlaceholder: "e.g. customer change, or cash taken out",
@@ -701,7 +702,31 @@ export const strings = {
       shift_not_found_or_already_closed: "That shift is already closed, or no longer exists",
       counted_cash_required: "Enter the cash you counted",
       counted_cash_negative: "The counted cash cannot be negative",
+      cash_direction_invalid: "Say whether the money went in or out",
+      cash_amount_required: "Enter an amount greater than zero",
+      cash_reason_required: "Give a reason for the movement",
+      cash_actor_required: "We do not know who is recording this — sign in again",
     },
+  },
+
+  cashDrawer: {
+    title: "Cash movement",
+    subtitle:
+      "Money in or out of the drawer that is not a sale — a bill paid, change brought in, takings removed. Recording it here is what keeps the drawer count honest.",
+    takeOut: "Take out",
+    putIn: "Put in",
+    amount: "Amount",
+    reason: "Reason",
+    reasonPlaceholder: "e.g. electricity bill, paid a supplier",
+    record: "Record",
+    recorded: "Movement recorded",
+    failed: "Could not record the movement",
+    todayTitle: "This shift's movements",
+    net: "Net",
+    button: "Cash movement",
+    paidFromDrawer: "Paid from the drawer",
+    paidFromDrawerHint:
+      "Tick this if the expense was paid in cash from the till, so it comes off what the drawer is expected to hold",
   },
 
   audit: {
