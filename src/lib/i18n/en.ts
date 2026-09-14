@@ -708,6 +708,7 @@ export const strings = {
       cash_actor_required: "We do not know who is recording this — sign in again",
       payment_amount_invalid: "That payment amount is not a number",
       payment_ref_required: "A payment has to belong to an invoice",
+      print_content_invalid: "The content to print is not valid",
     },
   },
 

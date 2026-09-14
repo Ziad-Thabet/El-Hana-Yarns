@@ -165,135 +165,54 @@ const CHANNEL_PERMISSIONS = {
  * A channel missing from this map falls back to its own name, which no
  * seeded role holds — deny by default, never allow by default.
  */
-const CHANNEL_CAPABILITY = {
-  "auth:login": "users.use",
-  "auth:logout": "users.use",
-  "auth:getSession": "users.use",
-  "auth:getUsers": "users.manage",
-  "auth:changePassword": "users.manage",
-  "auth:getActiveSession": "users.use",
-  "auth:hasAnyUsers": "users.use",
-  "auth:register": "users.use",
-  "categories:getAll": "catalogue.use",
-  "categories:create": "catalogue.manage",
-  "categories:update": "catalogue.manage",
-  "categories:delete": "catalogue.manage",
-  "products:getAll": "catalogue.use",
-  "products:getById": "catalogue.use",
-  "products:getByBarcode": "catalogue.use",
-  "products:generateBarcode": "catalogue.use",
-  "products:create": "catalogue.manage",
-  "products:update": "catalogue.manage",
-  "products:delete": "catalogue.manage",
-  "products:getForSales": "catalogue.use",
-  "products:deductStock": "catalogue.use",
-  "products:addStock": "catalogue.manage",
-  "purchase:getAll": "purchases.manage",
-  "purchase:getById": "purchases.manage",
-  "purchase:save": "purchases.manage",
-  "purchase:addPayment": "purchases.manage",
-  "purchase:delete": "purchases.manage",
-  "sales:getAll": "sales.use",
-  "sales:getById": "sales.use",
-  "sales:complete": "sales.use",
-  "sales:getBySource": "sales.manage",
-  "sales:getStats": "sales.use",
-  "customers:getAll": "customers.use",
-  "customers:getById": "customers.use",
-  "customers:create": "customers.use",
-  "customers:update": "customers.use",
-  "customers:delete": "customers.manage",
-  "customers:getDebts": "customers.use",
-  "customers:addDebt": "customers.use",
-  "customers:getByAnyPhone": "customers.use",
-  "customers:getProfile": "customers.use",
-  "customers:getAddresses": "customers.use",
-  "customers:addAddress": "customers.use",
-  "customers:updateAddress": "customers.use",
-  "customers:deleteAddress": "customers.manage",
-  "customers:setDefaultAddress": "customers.use",
-  "customers:getPhones": "customers.use",
-  "customers:addPhone": "customers.use",
-  "customers:updatePhone": "customers.use",
-  "customers:deletePhone": "customers.manage",
-  "debts:getAll": "debts.use",
-  "debts:getById": "debts.use",
-  "debts:addPayment": "debts.use",
-  "debts:addBulkPayment": "debts.use",
-  "reports:generate": "reports.manage",
-  "endOfDay:preview": "reports.manage",
-  "endOfDay:export": "reports.manage",
-  "shifts:getActive": "shifts.use",
-  "shifts:getByUserAndDate": "shifts.manage",
-  "shifts:getOrCreate": "shifts.use",
-  "shifts:ensure": "shifts.use",
-  "shifts:end": "shifts.use",
-  "shifts:previewClose": "shifts.use",
-  "shifts:closeRegister": "shifts.use",
-  "cash:record": "shifts.use",
-  "cash:getAll": "shifts.use",
-  "cash:getByShift": "shifts.use",
-  "shifts:getInvoices": "shifts.use",
-  "shifts:getAllInvoices": "shifts.manage",
-  "shifts:getSummary": "shifts.use",
-  "print:invoice": "sales.use",
-  "employees:getAll": "users.manage",
-  "employees:getById": "users.manage",
-  "employees:create": "users.manage",
-  "employees:update": "users.manage",
-  "employees:setSalary": "users.manage",
-  "employees:getSalaryHistory": "users.manage",
-  "employees:setActive": "users.manage",
-  "employees:changePassword": "users.manage",
-  "employees:getShifts": "users.manage",
-  "employees:getShiftInvoices": "users.manage",
-  "employees:getSalarySummary": "users.manage",
-  "expenses:getCategories": "expenses.manage",
-  "expenses:createCategory": "expenses.manage",
-  "expenses:deleteCategory": "expenses.manage",
-  "expenses:add": "expenses.manage",
-  "expenses:getAll": "expenses.manage",
-  "expenses:delete": "expenses.manage",
-  "expenses:getNetSummary": "expenses.manage",
-  "returns:getForInvoice": "returns.manage",
-  "returns:getReturnableLines": "returns.manage",
-  "returns:create": "returns.manage",
-  "returns:void": "returns.manage",
-  "returns:getAll": "returns.manage",
-  "settings:getClient": "settings.use",
-  "settings:getAll": "settings.manage",
-  "settings:update": "settings.manage",
-  "settings:reset": "settings.manage",
-  "audit:query": "audit.manage",
-  "audit:getFilterOptions": "audit.manage",
-  "backup:list": "backup.manage",
-  "backup:create": "backup.manage",
-  "backup:restore": "backup.manage",
-  "backup:reveal": "backup.manage",
-  "alerts:getAll": "alerts.manage",
-  "alerts:markRead": "alerts.manage",
-  "alerts:markAllRead": "alerts.manage",
-  "alerts:setInvoiceDueDate": "alerts.manage",
-  "alerts:runChecks": "alerts.manage",
-  "onlineOrders:getAll": "orders.use",
-  "onlineOrders:getById": "orders.use",
-  "onlineOrders:create": "orders.use",
-  "onlineOrders:update": "orders.use",
-  "onlineOrders:cancel": "orders.use",
-  "onlineOrders:dispatch": "orders.use",
-  "onlineOrders:updateStatus": "orders.use",
-  "onlineOrders:markNotReceived": "orders.use",
-  "onlineOrders:calculateTrustLevel": "orders.use",
-  "onlineOrders:uploadBillOfLading": "orders.use",
-  "drivers:getAll": "drivers.use",
-  "drivers:getActive": "drivers.use",
-  "drivers:getById": "drivers.use",
-  "drivers:create": "drivers.manage",
-  "drivers:update": "drivers.manage",
-  "drivers:getBalance": "drivers.use",
-  "drivers:registerManualPayment": "drivers.use",
-  "drivers:getLedger": "drivers.use",
-  "drivers:getSummary": "drivers.use",
+/**
+ * A capability is `<noun>.<use|manage>`.
+ *
+ * The suffix is not a per-channel decision: it follows the channel's own
+ * permission level, and that is load-bearing. Deriving it from the feature
+ * alone put `products:getAll` and `products:delete` behind one capability,
+ * which meant seeding the cashier role from the channels marked `any` handed
+ * it `catalogue.manage` as well. Reading the suffix from the permission is
+ * what closed that escalation, so it stays a rule rather than 128 strings
+ * somebody has to type correctly.
+ *
+ * Only the noun is a choice, and only where it differs from the channel's
+ * prefix — because several prefixes are two views of one thing: products and
+ * categories are both the catalogue, auth and employees are both users.
+ */
+const CAPABILITY_NOUN = {
+  auth: "users",
+  cash: "shifts",
+  categories: "catalogue",
+  employees: "users",
+  endOfDay: "reports",
+  onlineOrders: "orders",
+  print: "sales",
+  products: "catalogue",
+  purchase: "purchases",
 };
 
-module.exports = { CHANNEL_PERMISSIONS, CHANNEL_CAPABILITY };
+function capabilityFor(channel, permission) {
+  const prefix = channel.split(":")[0];
+  const noun = CAPABILITY_NOUN[prefix] ?? prefix;
+  return `${noun}.${permission === "admin" ? "manage" : "use"}`;
+}
+
+/**
+ * Derived from the permissions above, never written by hand. The two maps
+ * were separate lists of the same 128 channels, and a list kept beside
+ * another list is a list that eventually disagrees with it.
+ */
+const CHANNEL_CAPABILITY = Object.fromEntries(
+  Object.entries(CHANNEL_PERMISSIONS).map(([channel, permission]) => [
+    channel,
+    capabilityFor(channel, permission),
+  ]),
+);
+
+module.exports = {
+  CHANNEL_PERMISSIONS,
+  CHANNEL_CAPABILITY,
+  CAPABILITY_NOUN,
+  capabilityFor,
+};

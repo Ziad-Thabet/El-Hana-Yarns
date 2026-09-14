@@ -704,6 +704,7 @@ export const strings = {
       cash_actor_required: "مش عارفين مين بيسجل الحركة — اعمل تسجيل دخول تاني",
       payment_amount_invalid: "مبلغ الدفعة غير صحيح",
       payment_ref_required: "الدفعة لازم تكون على فاتورة",
+      print_content_invalid: "محتوى الطباعة غير صالح",
     },
   },
 
