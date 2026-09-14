@@ -1,4 +1,5 @@
 const { generateId } = require("../helpers/ids.cjs");
+const { createPaymentLedger } = require("../services/paymentLedger.cjs");
 const images = require("../helpers/images.cjs");
 const { nowDateTime } = require("../helpers/isoDates.cjs");
 function mapDebt(row, payments = [], customerPhone = null) {
@@ -26,7 +27,7 @@ function mapDebt(row, payments = [], customerPhone = null) {
     })),
   };
 }
-function createDebtsDB(getDb) {
+function createDebtsDB(getDb, ledger = createPaymentLedger(getDb)) {
   const debtsDB = {
     getAll() {
       const db = getDb();
@@ -94,19 +95,16 @@ function createDebtsDB(getDb) {
         db.prepare(
           "UPDATE customers SET total_debt = MAX(0, total_debt - ?), last_payment_date=? WHERE id=?",
         ).run(paymentData.amount, date, debt.customer_id);
-        db.prepare(
-          "INSERT INTO payment_records (id, ref_id, ref_type, amount, date, time, method, receipt_image, notes, source, shift_id) VALUES (?,?,'sale',?,?,?,?,?,?,'debt_settlement',?)",
-        ).run(
-          generateId("pay"),
-          debt.invoice_id,
-          paymentData.amount,
-          paymentData.date ?? date,
-          paymentData.time ?? time,
-          paymentData.method ?? "cash",
-          debtReceiptPath,
-          paymentData.notes ?? null,
-          paymentData.shiftId ?? null,
-        );
+        ledger.recordDebtSettlement({
+          invoiceId: debt.invoice_id,
+          amount: paymentData.amount,
+          date: paymentData.date ?? date,
+          time: paymentData.time ?? time,
+          method: paymentData.method ?? "cash",
+          receiptImage: debtReceiptPath,
+          notes: paymentData.notes ?? null,
+          shiftId: paymentData.shiftId ?? null,
+        });
       });
       payTx();
       return this.getById(debtId);
@@ -141,19 +139,16 @@ function createDebtsDB(getDb) {
           db.prepare(
             "UPDATE customer_debts SET paid_amount=?, remaining_amount=?, last_updated=? WHERE id=?",
           ).run(newPaid, newRemaining, date, debt.id);
-          db.prepare(
-            "INSERT INTO payment_records (id, ref_id, ref_type, amount, date, time, method, receipt_image, notes, source, shift_id) VALUES (?,?,'sale',?,?,?,?,?,?,'debt_settlement',?)",
-          ).run(
-            generateId("pay"),
-            debt.invoice_id,
-            applyAmount,
-            paymentData.date ?? date,
-            paymentData.time ?? time,
-            paymentData.method ?? "cash",
-            receiptPath,
-            paymentData.notes ?? null,
-            paymentData.shiftId ?? null,
-          );
+          ledger.recordDebtSettlement({
+            invoiceId: debt.invoice_id,
+            amount: applyAmount,
+            date: paymentData.date ?? date,
+            time: paymentData.time ?? time,
+            method: paymentData.method ?? "cash",
+            receiptImage: receiptPath,
+            notes: paymentData.notes ?? null,
+            shiftId: paymentData.shiftId ?? null,
+          });
           affectedDebtIds.push(debt.id);
           remainingToApply -= applyAmount;
         }

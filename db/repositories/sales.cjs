@@ -4,6 +4,7 @@ const images = require("../helpers/images.cjs");
 const { safeNumber, round } = require("../helpers/numbers.cjs");
 const { stockUnitsFor } = require("../../shared/stockUnits.cjs");
 const { nextDocumentNumber } = require("../helpers/documentNumbers.cjs");
+const { createPaymentLedger } = require("../services/paymentLedger.cjs");
 // SQLite's default parameter ceiling is 999; stay clear of it when expanding
 // an IN (...) list.
 const MAX_SQL_PARAMS = 900;
@@ -138,7 +139,7 @@ function mapSaleInvoice(inv, items, payments = [], debt = null, refunded = 0) {
     })),
   };
 }
-function createSalesDB(getDb, productsDB) {
+function createSalesDB(getDb, productsDB, ledger = createPaymentLedger(getDb)) {
   const salesDB = {
     getAll() {
       const db = getDb();
@@ -231,18 +232,15 @@ function createSalesDB(getDb, productsDB) {
             split.receiptImage ?? null,
             "receipt",
           );
-          db.prepare(
-            "INSERT INTO payment_records (id, ref_id, ref_type, amount, date, time, method, receipt_image, source, shift_id) VALUES (?,?,'sale',?,?,?,?,?,'checkout',?)",
-          ).run(
-            generateId("pay"),
-            id,
-            split.amount ?? 0,
+          ledger.recordSaleCollection({
+            invoiceId: id,
+            amount: split.amount ?? 0,
             date,
             time,
-            split.method ?? "cash",
-            splitReceiptPath,
+            method: split.method ?? "cash",
+            receiptImage: splitReceiptPath,
             shiftId,
-          );
+          });
         }
         for (const item of checkoutData.items ?? []) {
           db.prepare(

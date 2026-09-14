@@ -25,10 +25,16 @@ function sourceFiles() {
     path.join(P, "session-manager.cjs"),
     path.join(P, "rate-limiter.cjs"),
   ].filter((f) => fs.existsSync(f));
-  const repoDir = path.join(P, "db", "repositories");
-  for (const f of fs.readdirSync(repoDir)) {
-    if (f.endsWith(".cjs")) files.push(path.join(repoDir, f));
-  }
+  // Walks db/ rather than naming one directory: a new folder of code that
+  // throws — services/, helpers/ — must not slip past this by existing.
+  const walk = (dir) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) walk(full);
+      else if (entry.name.endsWith(".cjs")) files.push(full);
+    }
+  };
+  walk(path.join(P, "db"));
   return files;
 }
 
