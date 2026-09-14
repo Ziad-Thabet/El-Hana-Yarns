@@ -1,4 +1,5 @@
 const { generateId } = require("../helpers/ids.cjs");
+const { createPaymentLedger } = require("../services/paymentLedger.cjs");
 const images = require("../helpers/images.cjs");
 const { nowDateTime } = require("../helpers/isoDates.cjs");
 function mapPurchaseInvoice(inv, items, payments) {
@@ -34,7 +35,7 @@ function mapPurchaseInvoice(inv, items, payments) {
     })),
   };
 }
-function createPurchaseDB(getDb, productsDB) {
+function createPurchaseDB(getDb, productsDB, ledger = createPaymentLedger(getDb)) {
   function generateInvoiceNumber() {
     const db = getDb();
     const now = new Date();
@@ -173,17 +174,14 @@ function createPurchaseDB(getDb, productsDB) {
           if (existing) productsDB.addStock(existing.id, item.quantity);
         }
         if (data.paidAmount > 0) {
-          db.prepare(
-            "INSERT INTO payment_records (id, ref_id, ref_type, amount, date, time, method, receipt_image) VALUES (?,?,'purchase',?,?,?,?,?)",
-          ).run(
-            generateId("pay"),
-            id,
-            data.paidAmount,
-            data.date ?? date,
-            data.time ?? time,
-            data.method ?? "cash",
-            receiptPath,
-          );
+          ledger.recordPurchasePayment({
+            invoiceId: id,
+            amount: data.paidAmount,
+            date: data.date ?? date,
+            time: data.time ?? time,
+            method: data.method ?? "cash",
+            receiptImage: receiptPath,
+          });
         }
       });
       saveTx();
@@ -206,18 +204,15 @@ function createPurchaseDB(getDb, productsDB) {
         db.prepare(
           "UPDATE purchase_invoices SET paid_amount=?, status=? WHERE id=?",
         ).run(newPaid, newStatus, invoiceId);
-        db.prepare(
-          "INSERT INTO payment_records (id, ref_id, ref_type, amount, date, time, method, receipt_image, notes) VALUES (?,?,'purchase',?,?,?,?,?,?)",
-        ).run(
-          generateId("pay"),
+        ledger.recordPurchasePayment({
           invoiceId,
-          paymentData.amount,
-          paymentData.date ?? date,
-          paymentData.time ?? time,
-          paymentData.method ?? "cash",
-          payReceiptPath,
-          paymentData.notes ?? null,
-        );
+          amount: paymentData.amount,
+          date: paymentData.date ?? date,
+          time: paymentData.time ?? time,
+          method: paymentData.method ?? "cash",
+          receiptImage: payReceiptPath,
+          notes: paymentData.notes ?? null,
+        });
       });
       payTx();
       return this.getById(invoiceId);

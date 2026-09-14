@@ -1,4 +1,5 @@
 const { generateId } = require("../helpers/ids.cjs");
+const { createPaymentLedger } = require("../services/paymentLedger.cjs");
 const images = require("../helpers/images.cjs");
 const { nowDateTime, normalizeIsoDate } = require("../helpers/isoDates.cjs");
 const { safeNumber } = require("../helpers/numbers.cjs");
@@ -121,6 +122,7 @@ function createOnlineOrdersDB(
   customersDB,
   driversDB,
   ensureActiveShift,
+  ledger = createPaymentLedger(getDb),
 ) {
   function getItemsForOrder(db, orderId) {
     return db
@@ -545,84 +547,54 @@ function createOnlineOrdersDB(
 
         const { COD, PAID_ONLINE, SPLIT, PARTIAL } = ORDER_PAYMENT_METHOD;
         const onlineMethod = order.onlinePaymentChannel || "vodafone";
+        // What each payment arrangement actually collects on dispatch. Paid
+        // online was taken before the driver left; cash on delivery arrives
+        // now; a partial order is both, in that order.
+        const collected = [];
         if (order.paymentMethod === PAID_ONLINE) {
-          db.prepare(
-            `INSERT INTO payment_records
-               (id, ref_id, ref_type, amount, date, time, method, notes, source, shift_id)
-             VALUES (?,?,'sale',?,?,?,?,?,'checkout',?)`,
-          ).run(
-            generateId("pay"),
-            invoiceId,
-            order.productsTotal,
-            date,
-            time,
-            onlineMethod,
-            `مدفوع أونلاين — ${order.orderNumber}`,
-            shift.id,
-          );
+          collected.push({
+            amount: order.productsTotal,
+            method: onlineMethod,
+            note: `مدفوع أونلاين — ${order.orderNumber}`,
+          });
         } else if (order.paymentMethod === COD) {
-          db.prepare(
-            `INSERT INTO payment_records
-               (id, ref_id, ref_type, amount, date, time, method, notes, source, shift_id)
-             VALUES (?,?,'sale',?,?,?,?,?,'checkout',?)`,
-          ).run(
-            generateId("pay"),
-            invoiceId,
-            order.productsTotal,
-            date,
-            time,
-            "cash",
-            `تحصيل نقدي عند التسليم — ${order.orderNumber}`,
-            shift.id,
-          );
+          collected.push({
+            amount: order.productsTotal,
+            method: "cash",
+            note: `تحصيل نقدي عند التسليم — ${order.orderNumber}`,
+          });
         } else if (order.paymentMethod === SPLIT) {
-          db.prepare(
-            `INSERT INTO payment_records
-               (id, ref_id, ref_type, amount, date, time, method, notes, source, shift_id)
-             VALUES (?,?,'sale',?,?,?,?,?,'checkout',?)`,
-          ).run(
-            generateId("pay"),
-            invoiceId,
-            order.productsTotal,
-            date,
-            time,
-            onlineMethod,
-            `منتجات مدفوعة أونلاين — ${order.orderNumber}`,
-            shift.id,
-          );
+          collected.push({
+            amount: order.productsTotal,
+            method: onlineMethod,
+            note: `منتجات مدفوعة أونلاين — ${order.orderNumber}`,
+          });
         } else if (order.paymentMethod === PARTIAL) {
           if (breakdown.prepaidAmount > 0) {
-            db.prepare(
-              `INSERT INTO payment_records
-                 (id, ref_id, ref_type, amount, date, time, method, notes, source, shift_id)
-               VALUES (?,?,'sale',?,?,?,?,?,'checkout',?)`,
-            ).run(
-              generateId("pay"),
-              invoiceId,
-              breakdown.prepaidAmount,
-              date,
-              time,
-              onlineMethod,
-              `دفعة مقدمة — ${order.orderNumber}`,
-              shift.id,
-            );
+            collected.push({
+              amount: breakdown.prepaidAmount,
+              method: onlineMethod,
+              note: `دفعة مقدمة — ${order.orderNumber}`,
+            });
           }
           if (breakdown.remainingAmount > 0) {
-            db.prepare(
-              `INSERT INTO payment_records
-                 (id, ref_id, ref_type, amount, date, time, method, notes, source, shift_id)
-               VALUES (?,?,'sale',?,?,?,?,?,'checkout',?)`,
-            ).run(
-              generateId("pay"),
-              invoiceId,
-              breakdown.remainingAmount,
-              date,
-              time,
-              "cash",
-              `باقي التحصيل — ${order.orderNumber}`,
-              shift.id,
-            );
+            collected.push({
+              amount: breakdown.remainingAmount,
+              method: "cash",
+              note: `باقي التحصيل — ${order.orderNumber}`,
+            });
           }
+        }
+        for (const entry of collected) {
+          ledger.recordSaleCollection({
+            invoiceId,
+            amount: entry.amount,
+            date,
+            time,
+            method: entry.method,
+            notes: entry.note,
+            shiftId: shift.id,
+          });
         }
 
         const driverRow = driversDB.getById(driverId);

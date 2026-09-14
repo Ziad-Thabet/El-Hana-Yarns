@@ -702,6 +702,8 @@ export const strings = {
       cash_amount_required: "اكتب مبلغ أكبر من صفر",
       cash_reason_required: "اكتب سبب الحركة",
       cash_actor_required: "مش عارفين مين بيسجل الحركة — اعمل تسجيل دخول تاني",
+      payment_amount_invalid: "مبلغ الدفعة غير صحيح",
+      payment_ref_required: "الدفعة لازم تكون على فاتورة",
     },
   },
 

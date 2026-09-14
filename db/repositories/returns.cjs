@@ -1,4 +1,5 @@
 const { generateId } = require("../helpers/ids.cjs");
+const { createPaymentLedger } = require("../services/paymentLedger.cjs");
 const { nowDateTime } = require("../helpers/isoDates.cjs");
 const { round, safeNumber } = require("../helpers/numbers.cjs");
 const { stockUnitsForRow } = require("../../shared/stockUnits.cjs");
@@ -45,7 +46,7 @@ function mapReturn(row, items = []) {
   };
 }
 
-function createReturnsDB(getDb, productsDB) {
+function createReturnsDB(getDb, productsDB, ledger = createPaymentLedger(getDb)) {
   function generateReturnNumber(db, date) {
     const prefix = `RT-${date.replace(/-/g, "")}`;
     const last = db
@@ -296,22 +297,18 @@ function createReturnsDB(getDb, productsDB) {
           }
         }
 
-        const insertPayment = db.prepare(
-          `INSERT INTO payment_records
-             (id, ref_id, ref_type, amount, date, time, method, notes, source, shift_id)
-           VALUES (?,?,'sale',?,?,?,?,?,'refund',?)`,
-        );
         for (const split of refundSplits) {
-          insertPayment.run(
-            generateId("pay"),
+          // The ledger stores the negative; the split carries what was handed
+          // back, which is how the rest of this function reasons about it.
+          ledger.recordRefund({
             invoiceId,
-            -split.amount,
+            amount: split.amount,
             date,
             time,
-            split.method,
-            `مرتجع ${returnNumber}`,
+            method: split.method,
+            notes: `مرتجع ${returnNumber}`,
             shiftId,
-          );
+          });
         }
 
         if (debtReduced > 0 && debt) {

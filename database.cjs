@@ -37,6 +37,7 @@ const { createEndOfDayDB } = require("./db/repositories/endOfDay.cjs");
 const {
   createCashMovementsDB,
 } = require("./db/repositories/cashMovements.cjs");
+const { createPaymentLedger } = require("./db/services/paymentLedger.cjs");
 
 const isDev = !app.isPackaged;
 
@@ -980,13 +981,16 @@ const productsDB = createProductsDB(() => db, settingsDB);
 
 const authDB = createAuthDB(() => db);
 
-const purchaseDB = createPurchaseDB(() => db, productsDB);
+// One ledger for the whole application: every payment in the system is
+// written through this instance.
+const paymentLedger = createPaymentLedger(() => db);
+const purchaseDB = createPurchaseDB(() => db, productsDB, paymentLedger);
 
-const salesDB = createSalesDB(() => db, productsDB);
+const salesDB = createSalesDB(() => db, productsDB, paymentLedger);
 
-const returnsDB = createReturnsDB(() => db, productsDB);
+const returnsDB = createReturnsDB(() => db, productsDB, paymentLedger);
 
-const debtsDB = createDebtsDB(() => db);
+const debtsDB = createDebtsDB(() => db, paymentLedger);
 const customersDB = createCustomersDB(() => db, debtsDB);
 
 const reportsDB = createReportsDB(
@@ -1026,6 +1030,7 @@ const onlineOrdersDB = createOnlineOrdersDB(
   customersDB,
   driversDB,
   ensureActiveShift,
+  paymentLedger,
 );
 
 module.exports = {
