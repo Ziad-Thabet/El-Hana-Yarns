@@ -864,9 +864,13 @@ function registerHandlers() {
     return BrowserWindow.getFocusedWindow()?.isMaximized() ?? false;
   });
   // ── PRINT INVOICE ─────────────────────────
-  ipcMain.handle("print:invoice", async (event, htmlContent) => {
+  // Routed through the gate like every other channel. It was declared in the
+  // permissions map all along but handled with a raw ipcMain.handle, so the
+  // permission it advertised was never actually checked — the one channel that
+  // claimed a capability nobody enforced.
+  handle("print:invoice", async (htmlContent) => {
     if (typeof htmlContent !== "string") {
-      return { success: false, message: "Invalid print content" };
+      throw new Error("print_content_invalid");
     }
     let printWin = null;
     // Guarantees the hidden window is released down every path: a failed load,
@@ -914,10 +918,7 @@ function registerHandlers() {
           },
         );
       });
-      return { success: true };
-    } catch (error) {
-      console.error("[IPC Error] print:invoice:", error.message);
-      return { success: false, message: error.message };
+      return true;
     } finally {
       destroy();
     }
