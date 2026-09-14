@@ -1,6 +1,12 @@
+/**
+ * GENERATED FROM shared/onlineOrdersPayment.cjs — DO NOT EDIT.
+ *
+ * Edit the .cjs and run `npm run shared:sync`. A test fails if this file and
+ * its source disagree, so the two cannot drift apart.
+ */
 import { ORDER_PAYMENT_METHOD } from "./onlineOrdersEnums.mjs";
 
-export function computePaymentBreakdown(
+function computePaymentBreakdown(
   paymentMethod,
   productsTotal,
   deliveryFee,
@@ -51,3 +57,5 @@ export function computePaymentBreakdown(
       throw new Error(`طريقة دفع غير معروفة: ${paymentMethod}`);
   }
 }
+
+export { computePaymentBreakdown };

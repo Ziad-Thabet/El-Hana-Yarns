@@ -1,13 +1,20 @@
 /**
- * ESM mirror of shared/receiptIdentity.cjs — keep both in sync.
+ * GENERATED FROM shared/receiptIdentity.cjs — DO NOT EDIT.
  *
+ * Edit the .cjs and run `npm run shared:sync`. A test fails if this file and
+ * its source disagree, so the two cannot drift apart.
+ */
+/**
  * Shop identity as it appears on a receipt, and the paper size derived from it.
- * Shared so the configured width cannot mean one thing to the printer and
- * another to the layout.
+ *
+ * Shared between the renderer (which builds the receipt HTML and its preview)
+ * and the main process (which sets the Electron print page size), so the
+ * configured width cannot mean one thing to the printer and another to the
+ * layout — it previously existed as three independent copies of "80mm".
  */
 
 /** Blank fields must emit nothing at all; receipt paper is not free. */
-export function buildShopHeaderLines(shop = {}) {
+function buildShopHeaderLines(shop = {}) {
   const lines = [];
   const tagline = String(shop.tagline ?? "").trim();
   const address = String(shop.address ?? "").trim();
@@ -19,18 +26,24 @@ export function buildShopHeaderLines(shop = {}) {
 }
 
 /** "Name — tagline", or just the name when there is no tagline. */
-export function buildShopFooterLine(shop = {}) {
+function buildShopFooterLine(shop = {}) {
   const name = String(shop.name ?? "").trim();
   const tagline = String(shop.tagline ?? "").trim();
   if (!name) return tagline;
   return tagline ? `${name} — ${tagline}` : name;
 }
 
+/**
+ * Electron's print API takes microns. Height stays at the A4-ish roll length;
+ * only the width is configurable, because that is what the paper dictates.
+ */
 const RECEIPT_HEIGHT_MICRONS = 297000;
-export const DEFAULT_WIDTH_MM = 80;
+const DEFAULT_WIDTH_MM = 80;
 
-export function receiptPageSize(widthMm) {
+function receiptPageSize(widthMm) {
   const mm = Number(widthMm);
   const safe = Number.isFinite(mm) && mm > 0 ? mm : DEFAULT_WIDTH_MM;
   return { width: Math.round(safe * 1000), height: RECEIPT_HEIGHT_MICRONS };
 }
+
+export { buildShopHeaderLines, buildShopFooterLine, receiptPageSize, DEFAULT_WIDTH_MM };

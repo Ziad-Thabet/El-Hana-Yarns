@@ -62,24 +62,28 @@ check("negative falls back to the default", receiptPageSize(-5).width === 80000)
 check("junk falls back to the default", receiptPageSize("wide").width === 80000);
 check("undefined falls back to the default", receiptPageSize(undefined).width === 80000);
 
-console.log("\n=== the .mjs mirror agrees with the .cjs ===");
-const cjsSrc = fs.readFileSync(path.join(P, "shared/receiptIdentity.cjs"), "utf8");
-const mjsSrc = fs.readFileSync(path.join(P, "shared/receiptIdentity.mjs"), "utf8");
-// Compare executable code only: the two files carry different commentary by
-// design, but their logic must not drift apart.
-const bodyOf = (src) =>
-  src
-    .replace(/\/\*[\s\S]*?\*\//g, "")
-    .replace(/^\s*\/\/.*$/gm, "")
-    .replace(/\bexport\s+/g, "")
-    .replace(/^module\.exports[\s\S]*$/m, "")
-    .replace(/\s+/g, " ")
-    .trim();
+console.log("\n=== the ESM mirrors are generated, not typed ===");
+// Every rule both processes share lived twice: a .cjs and a hand-copied .mjs
+// carrying a comment asking whoever edited one to remember the other.
+// stockUnits was among them — the rule whose divergence caused the
+// weighted-stock defect. The mirror is generated from the .cjs now, and this
+// is what makes a stale one impossible: it regenerates in memory and compares.
+const {
+  MIRRORED,
+  expectedMirror,
+} = require(path.join(P, "scripts", "generate-esm-mirrors.cjs"));
+
+const stale = MIRRORED.filter((name) => {
+  const file = path.join(P, "shared", `${name}.mjs`);
+  if (!fs.existsSync(file)) return true;
+  return fs.readFileSync(file, "utf8").replace(/\r\n/g, "\n") !== expectedMirror(name);
+});
 check(
-  "both mirrors implement the same logic",
-  bodyOf(cjsSrc) === bodyOf(mjsSrc),
-  bodyOf(cjsSrc) === bodyOf(mjsSrc) ? "" : "the .cjs and .mjs have drifted apart",
+  "every mirror matches what its .cjs generates",
+  stale.length === 0,
+  stale.length ? `${stale.join(", ")} — run npm run shared:sync` : "",
 );
+check("one mirror for each rule the renderer imports", MIRRORED.length === 5);
 
 console.log("\n=== settings feed the receipt ===");
 const workDir = path.join(WORKDIR, "receipt");

@@ -1,3 +1,9 @@
+/**
+ * GENERATED FROM shared/onlineOrdersEnums.cjs — DO NOT EDIT.
+ *
+ * Edit the .cjs and run `npm run shared:sync`. A test fails if this file and
+ * its source disagree, so the two cannot drift apart.
+ */
 const ORDER_STATUS = {
   NEW: "new",
   PREPARING: "preparing",
@@ -42,7 +48,8 @@ const ORDER_PAYMENT_STATUS = {
   REFUND_REQUIRED: "refund_required",
 };
 
-const TRUST_LEVEL = {  REGULAR: "regular",
+const TRUST_LEVEL = {
+  REGULAR: "regular",
   VIP: "vip",
   WARNING: "warning",
   HIGH_RISK: "high_risk",
@@ -57,13 +64,4 @@ const TRUST_LEVEL_RULES = {
   HIGH_RISK_FAILURE_RATE_THRESHOLD: 0.4,
 };
 
-export {
-  ORDER_STATUS,
-  PRE_DISPATCH_STATUSES,
-  ORDER_SOURCE,
-  ORDER_PAYMENT_METHOD,
-  ORDER_PAYMENT_STATUS,
-  SETTLEMENT_TYPE,
-  TRUST_LEVEL,
-  TRUST_LEVEL_RULES,
-};
+export { ORDER_STATUS, PRE_DISPATCH_STATUSES, ORDER_SOURCE, ORDER_PAYMENT_METHOD, ORDER_PAYMENT_STATUS, SETTLEMENT_TYPE, TRUST_LEVEL, TRUST_LEVEL_RULES };
