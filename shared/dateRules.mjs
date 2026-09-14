@@ -1,4 +1,10 @@
-export function countFridaysInMonth(year, month) {
+/**
+ * GENERATED FROM shared/dateRules.cjs — DO NOT EDIT.
+ *
+ * Edit the .cjs and run `npm run shared:sync`. A test fails if this file and
+ * its source disagree, so the two cannot drift apart.
+ */
+function countFridaysInMonth(year, month) {
   const date = new Date(year, month - 1, 1);
   let fridays = 0;
   while (date.getMonth() === month - 1) {
@@ -7,13 +13,18 @@ export function countFridaysInMonth(year, month) {
   }
   return fridays;
 }
-export function workDaysInMonth(year, month) {
+
+function workDaysInMonth(year, month) {
   const daysInMonth = new Date(year, month, 0).getDate();
   return daysInMonth - countFridaysInMonth(year, month);
 }
-export function pad(n) {
+
+function pad(n) {
   return String(n).padStart(2, "0");
 }
-export function formatDateYMD(d) {
+
+function formatDateYMD(d) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
+
+export { countFridaysInMonth, workDaysInMonth, pad, formatDateYMD };
