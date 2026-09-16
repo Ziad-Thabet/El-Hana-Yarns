@@ -36,7 +36,7 @@ function useInvalidateAfterReturn() {
     qc.invalidateQueries({ queryKey: QK.products });
     qc.invalidateQueries({ queryKey: QK.debts });
     qc.invalidateQueries({ queryKey: QK.customers });
-    qc.invalidateQueries({ queryKey: ["shifts"] });
+    qc.invalidateQueries({ queryKey: QK.shiftsRoot });
   };
 }
 

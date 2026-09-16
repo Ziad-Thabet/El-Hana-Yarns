@@ -57,7 +57,7 @@ export function CashDrawerDialog({
     mutationFn: () => cashApi.record(direction, Number(amount), reason.trim()),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QK.cash });
-      qc.invalidateQueries({ queryKey: ["shifts"] });
+      qc.invalidateQueries({ queryKey: QK.shiftsRoot });
       setAmount("");
       setReason("");
       toast({ title: strings.cashDrawer.recorded });

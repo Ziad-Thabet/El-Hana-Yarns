@@ -36,8 +36,8 @@ export function useAddExpense() {
     mutationFn: (data: Parameters<typeof expensesApi.add>[0]) =>
       expensesApi.add(data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["expenses", "list"] });
-      qc.invalidateQueries({ queryKey: ["expenses", "net-summary"] });
+      qc.invalidateQueries({ queryKey: QK.expensesListRoot });
+      qc.invalidateQueries({ queryKey: QK.expensesNetRoot });
     },
   });
 }
@@ -47,8 +47,8 @@ export function useDeleteExpense() {
   return useMutation({
     mutationFn: (id: string) => expensesApi.delete(id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["expenses", "list"] });
-      qc.invalidateQueries({ queryKey: ["expenses", "net-summary"] });
+      qc.invalidateQueries({ queryKey: QK.expensesListRoot });
+      qc.invalidateQueries({ queryKey: QK.expensesNetRoot });
     },
   });
 }

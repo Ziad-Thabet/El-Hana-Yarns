@@ -14,7 +14,7 @@ export function useProducts(enabled = true) {
 
 export function useProductsForSales(enabled = true) {
   return useQuery({
-    queryKey: [...QK.products, "sales"],
+    queryKey: QK.productsForSales,
     queryFn: () => productsApi.getForSales(),
     staleTime: 1000 * 60 * 2,
     enabled,
