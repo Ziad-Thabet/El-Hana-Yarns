@@ -49,7 +49,13 @@ const cashDB = createCashMovementsDB(() => db);
 const shiftsDB = createShiftsDB(() => db, settingsDB, paymentMethodsDB, cashDB);
 
 const actor = db.prepare("SELECT id FROM users LIMIT 1").get().id;
-const today = new Date().toISOString().slice(0, 10);
+// The application records dates in local time — a sale at 01:00 belongs to
+// the day the shop is having, not to whatever day it is in UTC. A suite that
+// asks for "today" in UTC therefore queries the wrong day for a few hours
+// either side of midnight, and these suites did: they passed by day and
+// failed by night.
+const { formatDateYMD } = require(path.join(P, "shared/dateRules.cjs"));
+const today = formatDateYMD(new Date());
 
 console.log("=== schema and wiring ===");
 check("migration reached v8", getSchemaVersion(db) >= 8, `v${getSchemaVersion(db)}`);

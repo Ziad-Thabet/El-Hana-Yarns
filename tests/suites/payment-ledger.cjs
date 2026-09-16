@@ -38,7 +38,13 @@ const rowOf = (id) => db.prepare("SELECT * FROM payment_records WHERE id=?").get
 const ledger = createPaymentLedger(() => db);
 const invoice = db.prepare("SELECT id FROM sale_invoices WHERE voided=0 LIMIT 1").get();
 const purchase = db.prepare("SELECT id FROM purchase_invoices LIMIT 1").get();
-const today = new Date().toISOString().slice(0, 10);
+// The application records dates in local time — a sale at 01:00 belongs to
+// the day the shop is having, not to whatever day it is in UTC. A suite that
+// asks for "today" in UTC therefore queries the wrong day for a few hours
+// either side of midnight, and these suites did: they passed by day and
+// failed by night.
+const { formatDateYMD } = require(path.join(P, "shared/dateRules.cjs"));
+const today = formatDateYMD(new Date());
 const when = { date: today, time: "12:00" };
 
 console.log("=== a sale collection ===");
