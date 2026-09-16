@@ -60,4 +60,23 @@ export const QK = {
   shiftSummary: (shiftId: string) => ["shifts", "summary", shiftId] as const,
   cash: ["cash"] as const,
   cashByShift: (shiftId: string) => ["cash", "shift", shiftId] as const,
+  // Family roots. React Query matches a key by prefix, so invalidating a root
+  // clears every query beneath it. Hooks used to write these as bare arrays,
+  // which is how `["onlineOrders"]` came to sit beside `["online-orders"]` and
+  // silently match nothing at all.
+  productsForSales: [...["products"], "sales"] as const,
+  shiftsRoot: ["shifts"] as const,
+  shiftsSummaryRoot: ["shifts", "summary"] as const,
+  shiftsAllInvoicesRoot: ["shifts", "all-invoices"] as const,
+  onlineOrdersRoot: ["online-orders"] as const,
+  expensesListRoot: ["expenses", "list"] as const,
+  expensesNetRoot: ["expenses", "net-summary"] as const,
+  reportsRoot: ["reports"] as const,
+  driverBalanceRoot: ["drivers", "balance"] as const,
+  customerByPhone: (phone: string) =>
+    ["customers", "by-any-phone", phone] as const,
+  driverSummary: (driverId: string, from?: string, to?: string) =>
+    ["drivers", "summary", driverId, from, to] as const,
+  driverLedgerRoot: (driverId: string) =>
+    ["drivers", "ledger", driverId] as const,
 } as const;

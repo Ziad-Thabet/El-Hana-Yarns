@@ -52,7 +52,7 @@ export function useDriverSummary(
   enabled = true,
 ) {
   return useQuery({
-    queryKey: ["drivers", "summary", driverId, from, to],
+    queryKey: QK.driverSummary(driverId, from, to),
     queryFn: () => driversApi.getSummary(driverId, from, to),
     enabled: enabled && !!driverId,
   });
@@ -95,7 +95,7 @@ export function useRegisterDriverPayment() {
     }) => driversApi.registerManualPayment(driverId, amount, notes),
     onSuccess: (_, { driverId }) => {
       qc.invalidateQueries({ queryKey: QK.driverBalance(driverId) });
-      qc.invalidateQueries({ queryKey: ["drivers", "ledger", driverId] });
+      qc.invalidateQueries({ queryKey: QK.driverLedgerRoot(driverId) });
     },
   });
 }

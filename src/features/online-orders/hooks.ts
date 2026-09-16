@@ -38,7 +38,7 @@ export function useCreateOnlineOrder() {
   return useMutation({
     mutationFn: (data: OnlineOrderCreateInput) => onlineOrdersApi.create(data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["online-orders"] });
+      qc.invalidateQueries({ queryKey: QK.onlineOrdersRoot });
       qc.invalidateQueries({ queryKey: QK.customers });
     },
   });
@@ -50,7 +50,7 @@ export function useUpdateOnlineOrder() {
     mutationFn: ({ id, data }: { id: string; data: OnlineOrderUpdateInput }) =>
       onlineOrdersApi.update(id, data),
     onSuccess: (_, { id }) => {
-      qc.invalidateQueries({ queryKey: ["online-orders"] });
+      qc.invalidateQueries({ queryKey: QK.onlineOrdersRoot });
       qc.invalidateQueries({ queryKey: QK.onlineOrder(id) });
     },
   });
@@ -61,7 +61,7 @@ export function useCancelOnlineOrder() {
   return useMutation({
     mutationFn: (id: string) => onlineOrdersApi.cancel(id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["online-orders"] });
+      qc.invalidateQueries({ queryKey: QK.onlineOrdersRoot });
       qc.invalidateQueries({ queryKey: QK.customers });
     },
   });
@@ -78,7 +78,7 @@ export function useUpdateOnlineOrderStatus() {
       status: OnlineOrder["status"];
     }) => onlineOrdersApi.updateStatus(id, status),
     onSuccess: (_, { id }) => {
-      qc.invalidateQueries({ queryKey: ["online-orders"] });
+      qc.invalidateQueries({ queryKey: QK.onlineOrdersRoot });
       qc.invalidateQueries({ queryKey: QK.onlineOrder(id) });
     },
   });
@@ -95,7 +95,7 @@ export function useDispatchOnlineOrder() {
       driverId: string;
     }) => onlineOrdersApi.dispatch(orderId, driverId),
     onSuccess: (_, { driverId }) => {
-      qc.invalidateQueries({ queryKey: ["online-orders"] });
+      qc.invalidateQueries({ queryKey: QK.onlineOrdersRoot });
       qc.invalidateQueries({ queryKey: QK.customers });
       qc.invalidateQueries({ queryKey: QK.products });
       qc.invalidateQueries({ queryKey: QK.driverBalance(driverId) });
@@ -109,7 +109,7 @@ export function useUploadBillOfLading() {
     mutationFn: ({ orderId, image }: { orderId: string; image: string }) =>
       onlineOrdersApi.uploadBillOfLading(orderId, image),
     onSuccess: (_, { orderId }) => {
-      qc.invalidateQueries({ queryKey: ["online-orders"] });
+      qc.invalidateQueries({ queryKey: QK.onlineOrdersRoot });
       qc.invalidateQueries({ queryKey: QK.onlineOrder(orderId) });
     },
   });
@@ -120,10 +120,10 @@ export function useMarkOnlineOrderNotReceived() {
   return useMutation({
     mutationFn: (id: string) => onlineOrdersApi.markNotReceived(id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["online-orders"] });
+      qc.invalidateQueries({ queryKey: QK.onlineOrdersRoot });
       qc.invalidateQueries({ queryKey: QK.customers });
       qc.invalidateQueries({ queryKey: QK.products });
-      qc.invalidateQueries({ queryKey: ["drivers", "balance"] });
+      qc.invalidateQueries({ queryKey: QK.driverBalanceRoot });
     },
   });
 }

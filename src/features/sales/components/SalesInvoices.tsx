@@ -20,6 +20,7 @@ import { CloseRegisterDialog } from "./CloseRegisterDialog";
 import { CashDrawerDialog } from "./CashDrawerDialog";
 import { AdminShiftBlock } from "./AdminShiftBlock";
 import { type DatePreset, getPresetRange } from "@/lib/dateFilterPresets";
+import { QK } from "@/lib/queryKeys";
 import { InvoicePrint } from "@/components/InvoicePrint";
 
 import type { SaleInvoice, Shift } from "@/features/sales/types";
@@ -198,7 +199,7 @@ const SalesInvoices = ({
         open={endShiftOpen}
         shiftId={(shiftToEnd ?? activeShift)?.id ?? null}
         onClosed={() => {
-          qc.invalidateQueries({ queryKey: ["shifts"] });
+          qc.invalidateQueries({ queryKey: QK.shiftsRoot });
           setEndShiftOpen(false);
           setShiftToEnd(null);
           onShiftEnded?.();

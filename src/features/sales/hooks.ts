@@ -66,8 +66,8 @@ export function useCompleteSale() {
           queryKey: QK.shiftInvoices(variables.shiftId),
         });
       }
-      qc.invalidateQueries({ queryKey: ["shifts", "all-invoices"] });
-      qc.invalidateQueries({ queryKey: ["shifts", "summary"] });
+      qc.invalidateQueries({ queryKey: QK.shiftsAllInvoicesRoot });
+      qc.invalidateQueries({ queryKey: QK.shiftsSummaryRoot });
       qc.invalidateQueries({ queryKey: QK.debts });
       qc.invalidateQueries({ queryKey: QK.customers });
     },
@@ -80,7 +80,7 @@ export function useCreateOnlineOrderFromPOS() {
     mutationFn: (data: import("@/lib/types").OnlineOrderCreateInput) =>
       onlineOrdersApi.create(data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["onlineOrders"] });
+      qc.invalidateQueries({ queryKey: QK.onlineOrdersRoot });
       qc.invalidateQueries({ queryKey: QK.products });
     },
   });
@@ -110,7 +110,7 @@ type ShiftSummaryData = {
 export function useMultiShiftSummaries(shiftIds: string[], enabled = true) {
   const results = useQueries({
     queries: shiftIds.map((shiftId) => ({
-      queryKey: ["shifts", "summary", shiftId],
+      queryKey: QK.shiftSummary(shiftId),
       queryFn: async () => {
         const res = await window.api.shifts.getSummary(shiftId);
         if (!res.success) throw new Error(res.message);
@@ -178,7 +178,7 @@ export function useMultiShiftInvoices(shiftIds: string[], enabled = true) {
 
 export function useShiftSummary(shiftId: string | null, enabled = true) {
   return useQuery({
-    queryKey: ["shifts", "summary", shiftId ?? ""],
+    queryKey: QK.shiftSummary(shiftId ?? ""),
     queryFn: async () => {
       if (!shiftId) return null;
       const res = await window.api.shifts.getSummary(shiftId);

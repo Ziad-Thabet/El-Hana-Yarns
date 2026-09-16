@@ -57,7 +57,7 @@ function useInvalidateSettings() {
     qc.invalidateQueries({ queryKey: QK.settings });
     // Thresholds change report and product output, so those caches are stale too.
     qc.invalidateQueries({ queryKey: QK.products });
-    qc.invalidateQueries({ queryKey: ["reports"] });
+    qc.invalidateQueries({ queryKey: QK.reportsRoot });
   };
 }
 

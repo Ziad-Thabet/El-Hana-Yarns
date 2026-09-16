@@ -81,8 +81,8 @@ export function useAddDebtPayment() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QK.debts });
       qc.invalidateQueries({ queryKey: QK.customers });
-      qc.invalidateQueries({ queryKey: ["shifts", "summary"] });
-      qc.invalidateQueries({ queryKey: ["shifts", "all-invoices"] });
+      qc.invalidateQueries({ queryKey: QK.shiftsSummaryRoot });
+      qc.invalidateQueries({ queryKey: QK.shiftsAllInvoicesRoot });
       qc.invalidateQueries({ queryKey: QK.sales });
     },
   });
@@ -103,8 +103,8 @@ export function useAddBulkDebtPayment() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QK.debts });
       qc.invalidateQueries({ queryKey: QK.customers });
-      qc.invalidateQueries({ queryKey: ["shifts", "summary"] });
-      qc.invalidateQueries({ queryKey: ["shifts", "all-invoices"] });
+      qc.invalidateQueries({ queryKey: QK.shiftsSummaryRoot });
+      qc.invalidateQueries({ queryKey: QK.shiftsAllInvoicesRoot });
       qc.invalidateQueries({ queryKey: QK.sales });
     },
   });
@@ -120,7 +120,7 @@ export function useCustomerProfile(customerId: string, enabled = true) {
 
 export function useCustomerByAnyPhone(phone: string, enabled = true) {
   return useQuery({
-    queryKey: ["customers", "by-any-phone", phone] as const,
+    queryKey: QK.customerByPhone(phone),
     queryFn: () => customersApi.getByAnyPhone(phone),
     enabled: enabled && phone.length >= 6,
   });
