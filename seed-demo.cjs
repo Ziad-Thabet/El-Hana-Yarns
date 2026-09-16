@@ -9,6 +9,7 @@ const path = require("path");
 const fs = require("fs");
 const Database = require("better-sqlite3");
 const bcryptjs = require("bcryptjs");
+const { formatDateYMD } = require("./shared/dateRules.cjs");
 const {
   ORDER_STATUS,
   ORDER_SOURCE,
@@ -89,7 +90,10 @@ function seed() {
     yesterday.setDate(today.getDate() - 1);
     const lastWeek = new Date(today);
     lastWeek.setDate(today.getDate() - 6);
-    const fmt = (d) => d.toISOString().slice(0, 10);
+    // The same rule the application writes dates with. toISOString() would
+    // date the demo day in UTC, so for a few hours either side of midnight the
+    // seeded "today" is a day the app does not consider today.
+    const fmt = formatDateYMD;
 
     // ── Accounts ──────────────────────────────────
     // The rows below reference their actors by literal id: "admin" for
