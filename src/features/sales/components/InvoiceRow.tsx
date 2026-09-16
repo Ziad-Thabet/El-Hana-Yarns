@@ -104,7 +104,7 @@ export function InvoiceRow({
         <Button
           size="sm"
           variant="outline"
-          className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+          className="h-11 w-11 p-0 shrink-0 reveal-on-hover"
           onClick={onPrint}
         >
           <Printer className="w-3.5 h-3.5" />

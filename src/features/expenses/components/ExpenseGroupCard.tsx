@@ -64,7 +64,7 @@ export function ExpenseGroupCard({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 text-muted-foreground opacity-0 transition-all duration-150 hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+                className="h-11 w-11 text-muted-foreground transition-colors duration-150 hover:bg-destructive/10 hover:text-destructive reveal-on-hover"
                 onClick={() => onDeleteItem(ex.id)}
                 title={strings.expenses.deleteExpense}
               >

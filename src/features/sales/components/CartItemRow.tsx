@@ -25,7 +25,7 @@ export const CartItemRow = ({
         <p className="text-sm text-muted-foreground">
           {CartItemModel.from(item).measureLabel}
         </p>
-        <p className="text-sm font-semibold text-foreground">
+        <p className="text-base font-bold text-foreground tabular-nums">
           {CartItemModel.from(item).totalLabel}
         </p>
       </div>
@@ -35,18 +35,18 @@ export const CartItemRow = ({
             <Button
               size="sm"
               variant="outline"
-              className="h-8 w-8 p-0"
+              className="h-11 w-11 p-0 shrink-0"
               onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
             >
-              <Minus className="w-3 h-3" />
+              <Minus className="w-5 h-5" />
             </Button>
-            <span className="w-9 text-center font-semibold text-sm">
+            <span className="w-10 text-center font-bold text-lg tabular-nums">
               {item.quantity}
             </span>
             <Button
               size="sm"
               variant="outline"
-              className="h-8 w-8 p-0"
+              className="h-11 w-11 p-0 shrink-0"
               onClick={() => {
                 const ok = onUpdateQuantity(item.id, item.quantity + 1);
                 if (!ok) {
@@ -58,17 +58,17 @@ export const CartItemRow = ({
                 }
               }}
             >
-              <Plus className="w-3 h-3" />
+              <Plus className="w-5 h-5" />
             </Button>
           </>
         )}
         <Button
           size="sm"
           variant="destructive"
-          className="h-8 w-8 p-0"
+          className="h-11 w-11 p-0 shrink-0"
           onClick={() => onRemoveItem(item.id)}
         >
-          <Trash2 className="w-3 h-3" />
+          <Trash2 className="w-4 h-4" />
         </Button>
       </div>
     </div>

@@ -21,7 +21,10 @@ const buttonVariants = cva(
       },
       size: {
         default: "h-11 px-5 py-2",
-        sm: "h-9 px-3",
+        // 40px. Small enough to sit in a toolbar, still wide enough for a
+        // fingertip on the shop's touchscreen — nothing here is used with a
+        // mouse. The default and icon sizes are already 44px.
+        sm: "h-10 px-3.5",
         lg: "h-12 px-8 text-base",
         icon: "h-11 w-11",
       },

@@ -61,12 +61,12 @@ export function InvoiceList({
     <div className="space-y-4">
       <div className="flex items-center gap-3">
         <div className="relative flex-1">
-          <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Search className="absolute start-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={strings.salesInvoices.searchPlaceholder}
-            className="ps-10 h-9 text-sm"
+            className="ps-11 h-11 text-base"
           />
         </div>
         <div className="shrink-0 text-sm text-muted-foreground whitespace-nowrap">
