@@ -159,7 +159,7 @@ export function OnlineOrderPaymentSection({
           <span className="text-muted-foreground">
             {strings.onlineOrdersExtra.collectFromCustomer}
           </span>
-          <span className="font-medium text-emerald-600">
+          <span className="font-medium text-success">
             {Money.from(breakdown.collectFromCustomer).toString()}
           </span>
         </div>
@@ -168,7 +168,7 @@ export function OnlineOrderPaymentSection({
             <span className="text-muted-foreground">
               {strings.onlineOrdersExtra.driverCustody}
             </span>
-            <span className="font-medium text-amber-600">
+            <span className="font-medium text-warning">
               {Money.from(breakdown.driverOwesShop).toString()}
             </span>
           </div>
@@ -178,7 +178,7 @@ export function OnlineOrderPaymentSection({
             <span className="text-muted-foreground">
               {strings.onlineOrdersExtra.driverFee}
             </span>
-            <span className="font-medium text-amber-600">
+            <span className="font-medium text-warning">
               {Money.from(breakdown.shopOwesDriver).toString()}
             </span>
           </div>

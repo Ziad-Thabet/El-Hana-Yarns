@@ -32,6 +32,30 @@
     --border: 60 10% 90%;
     --input: 60 10% 90%;
     --ring: 221 83% 48%;
+    /* ── Semantic colour ──────────────────────────────────────────────────
+     * Money read across a counter has meaning before it has a hue: taken,
+     * owed, pending, noted. Those meanings were spelled in ten different
+     * Tailwind palettes across twenty-five files — green-600 here, emerald-500
+     * there, rose-400 for the same idea two screens over — and none of them
+     * changed between the light and dark themes, because a literal palette
+     * colour cannot.
+     *
+     * Every lightness below was solved for, not chosen: each clears 4.5:1
+     * against both the card and the page in its own theme, and a test in the
+     * suite recomputes that on every run.
+     */
+    --success: 152 62% 31%;
+    --success-foreground: 0 0% 100%;
+    --success-soft: 152 62% 31% / 0.1;
+    --warning: 32 82% 35%;
+    --warning-foreground: 0 0% 100%;
+    --warning-soft: 32 82% 35% / 0.12;
+    --info: 250 62% 50%;
+    --info-foreground: 0 0% 100%;
+    --info-soft: 250 62% 50% / 0.1;
+    /* The accent is a surface — 36 components use it as a background. This is
+     * the readable version of the same hue, for the 31 that need it as text. */
+    --accent-strong: 33 60% 34%;
     --radius: 0.875rem;
     --radius-md: 0.75rem;
     --radius-lg: 1rem;
@@ -68,11 +92,27 @@
     --muted-foreground: 0 0% 64%;
     --accent: 36 62% 70%;
     --accent-foreground: 216 28% 7%;
-    --destructive: 0 62% 55%;
-    --destructive-foreground: 0 0% 100%;
+    /* Was 0 62% 55%, which measured 3.50:1 on a card — under AA for the
+     * small red text this theme uses for money owed and drawers short. */
+    --destructive: 0 76% 66%;
+    /* Near-black, like every other solid colour in this theme: white on the
+     * lightened red measures 3.19:1, which is worse than what it replaced. */
+    --destructive-foreground: 216 28% 7%;
     --border: 0 0% 100% / 0.08;
     --input: 0 0% 100% / 0.08;
     --ring: 221 100% 65%;
+    /* Semantic colour — see the light theme for why these exist. Solved for
+     * the dark surfaces: each clears 4.5:1 on both the card and the page. */
+    --success: 152 58% 62%;
+    --success-foreground: 216 28% 7%;
+    --success-soft: 152 58% 62% / 0.14;
+    --warning: 38 88% 62%;
+    --warning-foreground: 216 28% 7%;
+    --warning-soft: 38 88% 62% / 0.14;
+    --info: 250 88% 74%;
+    --info-foreground: 216 28% 7%;
+    --info-soft: 250 88% 74% / 0.14;
+    --accent-strong: 36 70% 62%;
     --radius: 0.875rem;
     --radius-md: 0.75rem;
     --radius-lg: 1rem;

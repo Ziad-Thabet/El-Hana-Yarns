@@ -78,7 +78,7 @@ export function AddExpenseForm({
   return (
     <Card className={cn(cards.elevated, "animate-fade-in overflow-hidden")}>
       <div className="flex items-center gap-2 border-b border-border bg-muted/30 px-5 py-3.5">
-        <Sparkles className="h-4 w-4 text-accent" />
+        <Sparkles className="h-4 w-4 text-accent-strong" />
         <span className="font-display text-sm font-semibold text-foreground">
           {strings.expenses.addExpense}
         </span>

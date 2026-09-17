@@ -184,7 +184,7 @@ export function EmployeeListTab({
                   {expandedHistory === emp.id && (
                     <tr className="bg-muted/20">
                       <td colSpan={6} className="px-6 py-4">
-                        <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-accent">
+                        <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-accent-strong">
                           {strings.employees.salaryHistory}
                         </p>
                         {salaryHistoryLoading ? (

@@ -146,7 +146,7 @@ export const AddPurchaseInvoiceDialog = ({
             </div>
             <div className="mt-3 text-end text-muted-foreground text-sm">
               {strings.purchases.itemsTotalLabel}{" "}
-              <span className="font-bold text-sky-400">
+              <span className="font-bold text-info">
                 {Money.from(calcTotal()).toString()}
               </span>
             </div>

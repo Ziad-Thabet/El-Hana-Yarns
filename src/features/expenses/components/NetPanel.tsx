@@ -75,7 +75,7 @@ export function NetPanel() {
           >
             <div className="h-1 w-full bg-gradient-to-l from-accent via-accent/40 to-transparent" />
             <div className="space-y-0.5 px-6 pb-1 pt-5">
-              <span className="block text-[11px] font-semibold uppercase tracking-[0.22em] text-accent">
+              <span className="block text-[11px] font-semibold uppercase tracking-[0.22em] text-accent-strong">
                 {strings.expensesExtra.periodSummary}
               </span>
               <h3 className="font-display text-base font-semibold text-foreground">

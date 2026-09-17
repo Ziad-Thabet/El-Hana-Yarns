@@ -712,7 +712,7 @@ export function OnlineOrderDetailDialog({
                     <span className="text-muted-foreground">
                       {strings.onlineOrders.remainingAmount}
                     </span>
-                    <span className="font-semibold text-rose-500">
+                    <span className="font-semibold text-destructive">
                       {Money.from(order.remainingAmount).toString()}
                     </span>
                   </div>
@@ -760,7 +760,7 @@ export function OnlineOrderDetailDialog({
                       onClick={() => setLadingPreviewOpen(true)}
                     />
                     <div className="space-y-1">
-                      <p className="text-xs text-emerald-600 font-medium">
+                      <p className="text-xs text-success font-medium">
                         {strings.onlineOrdersExtra.labelUploaded}
                       </p>
                       <button
@@ -950,7 +950,7 @@ export function OnlineOrderDetailDialog({
           )}
 
           {confirmAction === "notReceived" && (
-            <div className="space-y-3 p-4 border border-amber-500/40 rounded-lg bg-amber-500/5">
+            <div className="space-y-3 p-4 border border-warning/40 rounded-lg bg-warning-soft">
               <p className="text-sm font-semibold text-foreground">
                 {strings.onlineOrders.confirmNotReceivedTitle}
               </p>
@@ -959,7 +959,7 @@ export function OnlineOrderDetailDialog({
               </p>
               <div className="flex gap-2">
                 <Button
-                  className="flex-1 bg-amber-600 hover:bg-amber-700 text-white"
+                  className="flex-1 bg-warning hover:bg-warning text-white"
                   onClick={handleNotReceived}
                   disabled={processing}
                 >
@@ -980,7 +980,7 @@ export function OnlineOrderDetailDialog({
               {order.status === "new" && (
                 <Button
                   variant="outline"
-                  className="border-amber-500/40 text-amber-600 hover:bg-amber-500/10"
+                  className="border-warning/40 text-warning hover:bg-warning-soft"
                   onClick={() => handleAdvanceStatus("preparing")}
                   disabled={processing}
                 >
@@ -993,7 +993,7 @@ export function OnlineOrderDetailDialog({
               {order.status === "preparing" && (
                 <Button
                   variant="outline"
-                  className="border-violet-500/40 text-violet-600 hover:bg-violet-500/10"
+                  className="border-info/40 text-info hover:bg-info-soft"
                   onClick={() => handleAdvanceStatus("ready")}
                   disabled={processing}
                 >
@@ -1023,7 +1023,7 @@ export function OnlineOrderDetailDialog({
               {order.status === "dispatched" && (
                 <Button
                   variant="outline"
-                  className="flex-1 border-amber-500/40 text-amber-600 hover:bg-amber-500/10"
+                  className="flex-1 border-warning/40 text-warning hover:bg-warning-soft"
                   onClick={() => setConfirmAction("notReceived")}
                 >
                   {strings.onlineOrders.markNotReceived}

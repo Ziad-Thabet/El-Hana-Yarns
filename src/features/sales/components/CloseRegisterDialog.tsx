@@ -169,9 +169,9 @@ export function CloseRegisterDialog({
               className={cn(
                 "flex items-center gap-2 rounded-xl px-4 py-3",
                 balanced
-                  ? "bg-emerald-500/10 text-emerald-500"
+                  ? "bg-success-soft text-success"
                   : variance > 0
-                    ? "bg-sky-500/10 text-sky-500"
+                    ? "bg-info-soft text-info"
                     : "bg-destructive/10 text-destructive",
               )}
             >

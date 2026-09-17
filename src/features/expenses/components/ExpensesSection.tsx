@@ -16,7 +16,7 @@ export default function ExpensesSection() {
   return (
     <div className={surfaces.content}>
       <div className="mb-8 space-y-1.5">
-        <span className="block text-[11px] font-semibold uppercase tracking-[0.22em] text-accent">
+        <span className="block text-[11px] font-semibold uppercase tracking-[0.22em] text-accent-strong">
           {strings.expensesExtra.accounts}
         </span>
         <h1 className={cn(typography.pageTitle, "rule-accent")}>

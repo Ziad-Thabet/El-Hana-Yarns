@@ -44,7 +44,7 @@ export function PeriodBar({
   return (
     <div className="flex flex-wrap items-center gap-3 rounded-[var(--radius-lg)] border border-border bg-muted/30 px-4 py-3">
       <div className="flex items-center gap-2">
-        <Calendar className="h-4 w-4 text-accent" />
+        <Calendar className="h-4 w-4 text-accent-strong" />
         <Select value={preset} onValueChange={handlePreset}>
           <SelectTrigger className="h-9 w-44 bg-background font-medium">
             <SelectValue />

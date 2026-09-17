@@ -36,7 +36,7 @@ export const ChangeConfirmDialog = ({
           <p className="text-sm text-muted-foreground">
             {strings.salesInvoices.changeDueDesc}
           </p>
-          <p className="text-2xl font-bold text-blue-600">
+          <p className="text-2xl font-bold text-info">
             {Money.from(changeDue).toString()}
           </p>
         </div>

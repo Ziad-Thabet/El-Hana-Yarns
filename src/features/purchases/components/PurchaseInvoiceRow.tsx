@@ -26,7 +26,7 @@ export const PurchaseInvoiceRow = ({
             <div className="flex items-center gap-2">
               <Badge
                 variant="outline"
-                className="text-sky-400 border-primary/50"
+                className="text-info border-primary/50"
               >
                 {invoice.invoiceNumber}
               </Badge>
@@ -53,11 +53,11 @@ export const PurchaseInvoiceRow = ({
               {strings.purchases.paidLabel}{" "}
               {Money.from(invoice.paidAmount).toString()}
             </p>
-            <p className="text-lg font-bold text-sky-400">
+            <p className="text-lg font-bold text-info">
               {Money.from(invoice.total).toString()}
             </p>
             {invoice.total > invoice.paidAmount && (
-              <p className="text-sm text-rose-400">
+              <p className="text-sm text-destructive">
                 {strings.purchases.remainingLabel}{" "}
                 {Money.from(invoice.total - invoice.paidAmount).toString()}
               </p>

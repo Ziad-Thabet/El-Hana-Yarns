@@ -171,19 +171,19 @@ export function OnlineOrdersReportView({ data }: { data: OnlineOrdersReport }) {
           icon={DollarSign}
         >
           <div className="grid grid-cols-2 gap-3 p-1">
-            <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
+            <div className="rounded-xl border border-warning/20 bg-warning-soft p-4">
               <p className="text-[11px] text-muted-foreground mb-1">
                 {strings.reports.owedToShopFromDrivers}
               </p>
-              <p className="text-lg font-bold text-amber-600 tabular-nums">
+              <p className="text-lg font-bold text-warning tabular-nums">
                 {fmt(driverSettlementTotals?.totalOwedToShop ?? 0)}
               </p>
             </div>
-            <div className="rounded-xl border border-rose-500/20 bg-rose-500/5 p-4">
+            <div className="rounded-xl border border-destructive/20 bg-destructive-soft p-4">
               <p className="text-[11px] text-muted-foreground mb-1">
                 {strings.reports.owedToDriversFromShop}
               </p>
-              <p className="text-lg font-bold text-rose-500 tabular-nums">
+              <p className="text-lg font-bold text-destructive tabular-nums">
                 {fmt(driverSettlementTotals?.totalOwedToDrivers ?? 0)}
               </p>
             </div>

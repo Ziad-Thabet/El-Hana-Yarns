@@ -106,7 +106,7 @@ export function CustomerLookup({
             <Label className="text-muted-foreground text-xs">
               {strings.onlineOrders.successfulOrders}
             </Label>
-            <p className="text-sm font-medium text-emerald-600">
+            <p className="text-sm font-medium text-success">
               {trustData.successfulOrders}
             </p>
           </div>
@@ -115,7 +115,7 @@ export function CustomerLookup({
               {strings.onlineOrders.cancelledOrders} /{" "}
               {strings.onlineOrders.notReceivedOrders}
             </Label>
-            <p className="text-sm font-medium text-rose-500">
+            <p className="text-sm font-medium text-destructive">
               {trustData.cancelledOrders} / {trustData.notReceivedOrders}
             </p>
           </div>

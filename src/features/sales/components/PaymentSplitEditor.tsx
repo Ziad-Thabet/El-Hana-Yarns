@@ -43,7 +43,7 @@ export const PaymentSplitEditor = ({
             variant="ghost"
             size="sm"
             onClick={() => onRemove(split.id)}
-            className="text-red-500"
+            className="text-destructive"
           >
             <Trash2 className="w-4 h-4" />
           </Button>
