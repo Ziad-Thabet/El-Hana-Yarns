@@ -57,7 +57,7 @@ function GroupHeader({
 }) {
   const toneColor =
     tone === "warning"
-      ? "text-amber-500"
+      ? "text-warning"
       : tone === "danger"
         ? "text-destructive"
         : tone === "muted"

@@ -15,7 +15,7 @@ export function ThemeToggle() {
       title={theme === "dark" ? strings.theme.toLight : strings.theme.toDark}
     >
       {theme === "dark" ? (
-        <Sun className="h-4 w-4 text-accent" />
+        <Sun className="h-4 w-4 text-accent-strong" />
       ) : (
         <Moon className="h-4 w-4 text-muted-foreground" />
       )}

@@ -14,7 +14,7 @@ export function PageHeading({
   return (
     <div className="mb-8 flex items-end justify-between gap-4">
       <div className="space-y-1.5">
-        <span className="block text-[11px] font-semibold uppercase tracking-[0.22em] text-accent">
+        <span className="block text-[11px] font-semibold uppercase tracking-[0.22em] text-accent-strong">
           {eyebrow}
         </span>
         <h1 className={cn(typography.pageTitle, "rule-accent")}>{title}</h1>

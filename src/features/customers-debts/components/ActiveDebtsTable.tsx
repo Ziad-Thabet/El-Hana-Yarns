@@ -84,10 +84,10 @@ export function ActiveDebtsTable({
                     <TableCell>
                       {Money.from(group.totalAmount).toString()}
                     </TableCell>
-                    <TableCell className="text-green-600">
+                    <TableCell className="text-success">
                       {Money.from(group.paidAmount).toString()}
                     </TableCell>
-                    <TableCell className="text-red-600 font-semibold">
+                    <TableCell className="text-destructive font-semibold">
                       {Money.from(group.remainingAmount).toString()}
                     </TableCell>
                     <TableCell>

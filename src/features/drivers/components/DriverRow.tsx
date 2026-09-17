@@ -36,7 +36,7 @@ export function DriverRow({
             variant="outline"
             className={
               driver.isActive
-                ? "text-emerald-600 border-emerald-500/30 text-[11px]"
+                ? "text-success border-success/30 text-[11px]"
                 : "text-muted-foreground border-border text-[11px]"
             }
           >

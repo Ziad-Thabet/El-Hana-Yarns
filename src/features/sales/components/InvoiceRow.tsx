@@ -51,7 +51,7 @@ export function InvoiceRow({
           {returnStatus === "partial" && (
             <Badge
               variant="outline"
-              className="text-[11px] px-2 shrink-0 border-orange-500/50 text-orange-500"
+              className="text-[11px] px-2 shrink-0 border-warning/50 text-warning"
             >
               {strings.returns.statusBadgePartial}
               {refunded > 0 && ` · ${Money.from(refunded).toString()}`}
@@ -60,7 +60,7 @@ export function InvoiceRow({
           {isPartialDebt && (
             <Badge
               variant="outline"
-              className="text-[11px] px-2 shrink-0 border-amber-500/50 text-amber-500"
+              className="text-[11px] px-2 shrink-0 border-warning/50 text-warning"
             >
               {strings.sales.partialDebtBadge}{" "}
               {Money.from(invoice.remainingAmount ?? 0).toString()}

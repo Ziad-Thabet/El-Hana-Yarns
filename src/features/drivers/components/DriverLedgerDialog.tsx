@@ -264,7 +264,7 @@ export function DriverLedgerDialog({
                     <div className="text-end shrink-0">
                       <p
                         className={`font-semibold ${
-                          entry.amount > 0 ? "text-amber-600" : "text-rose-500"
+                          entry.amount > 0 ? "text-warning" : "text-destructive"
                         }`}
                       >
                         {entry.amount > 0 ? "+" : ""}

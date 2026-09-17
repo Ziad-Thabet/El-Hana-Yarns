@@ -540,7 +540,7 @@ const ProductManagement = ({ isAdmin }: ProductManagementProps) => {
                   <span className="text-xs text-muted-foreground block">
                     {strings.products.unitPriceLabel}
                   </span>
-                  <span className="font-bold text-sky-400 block">
+                  <span className="font-bold text-info block">
                     {new ProductModel(product).priceLabel}
                   </span>
                 </div>

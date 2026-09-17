@@ -74,7 +74,7 @@ export function InvoiceList({
             {Money.from(totalRevenue).toString()}
           </span>
           {totalRefunded > 0 && (
-            <span className="ms-1.5 text-[11px] text-orange-500">
+            <span className="ms-1.5 text-[11px] text-warning">
               {strings.salesInvoices.afterReturns.replace(
                 "{amount}",
                 Money.from(totalRefunded).toString(),

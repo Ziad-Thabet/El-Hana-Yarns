@@ -168,7 +168,7 @@ export function InvoiceDetailDialog({
                         className="flex justify-between items-center p-3 bg-secondary border border-border rounded-lg"
                       >
                         <div>
-                          <p className="font-semibold text-emerald-300">
+                          <p className="font-semibold text-success">
                             {Money.from(p.amount).toString()}
                           </p>
                           <p className="text-sm text-muted-foreground">
@@ -179,7 +179,7 @@ export function InvoiceDetailDialog({
                           <button
                             type="button"
                             onClick={() => setPreviewImage(p.receiptImage!)}
-                            className="px-3 py-1.5 text-xs rounded-lg border border-sky-400/50 text-sky-400 hover:bg-sky-400/10 transition-colors"
+                            className="px-3 py-1.5 text-xs rounded-lg border border-info/50 text-info hover:bg-info-soft transition-colors"
                           >
                             {strings.salesInvoices.viewReceiptButton}
                           </button>
@@ -206,7 +206,7 @@ export function InvoiceDetailDialog({
                       <span className="text-muted-foreground">
                         {strings.common.paid}
                       </span>
-                      <span className="font-semibold text-emerald-500">
+                      <span className="font-semibold text-success">
                         {Money.from(invoice.paidAmount ?? 0).toString()}
                       </span>
                     </div>
@@ -214,7 +214,7 @@ export function InvoiceDetailDialog({
                       <span className="text-muted-foreground">
                         {strings.common.remaining}
                       </span>
-                      <span className="font-semibold text-rose-500">
+                      <span className="font-semibold text-destructive">
                         {Money.from(invoice.remainingAmount).toString()}
                       </span>
                     </div>

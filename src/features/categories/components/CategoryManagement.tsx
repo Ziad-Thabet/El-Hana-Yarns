@@ -269,7 +269,7 @@ const CategoryManagement = ({
                       size="sm"
                       variant="ghost"
                       onClick={() => handleDelete(category.id)}
-                      className="h-6 w-6 p-0 text-red-500 hover:text-red-400"
+                      className="h-6 w-6 p-0 text-destructive hover:text-destructive"
                     >
                       <Trash2 className="w-3 h-3" />
                     </Button>

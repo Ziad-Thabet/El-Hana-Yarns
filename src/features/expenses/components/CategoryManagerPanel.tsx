@@ -55,7 +55,7 @@ export function CategoryManagerPanel({
   return (
     <Card className={cn(cards.inset, "animate-fade-in p-5")}>
       <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-foreground">
-        <Layers className="h-4 w-4 text-accent" />
+        <Layers className="h-4 w-4 text-accent-strong" />
         <span>{strings.expensesExtra.manageCategories}</span>
       </div>
       <div className="mb-4 flex flex-wrap gap-2">

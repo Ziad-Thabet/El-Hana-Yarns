@@ -125,7 +125,7 @@ export const PurchaseInvoiceDetailsDialog = ({
                 <span className="text-sm text-muted-foreground block">
                   {strings.common.total}
                 </span>
-                <p className="font-semibold text-sky-400 mt-2">
+                <p className="font-semibold text-info mt-2">
                   {Money.from(invoice.total).toString()}
                 </p>
               </div>
@@ -133,7 +133,7 @@ export const PurchaseInvoiceDetailsDialog = ({
                 <span className="text-sm text-muted-foreground block">
                   {strings.common.paid}
                 </span>
-                <p className="font-semibold text-emerald-400 mt-2">
+                <p className="font-semibold text-success mt-2">
                   {Money.from(invoice.paidAmount).toString()}
                 </p>
                 <Button
@@ -239,7 +239,7 @@ export const PurchaseInvoiceDetailsDialog = ({
                       <TableCell className="text-muted-foreground text-sm">
                         {unitLabel(item.unit)}
                       </TableCell>
-                      <TableCell className="font-semibold text-sky-400">
+                      <TableCell className="font-semibold text-info">
                         {Money.from(
                           item.itemTotal ?? item.purchasePrice * item.quantity,
                         ).toString()}
@@ -261,7 +261,7 @@ export const PurchaseInvoiceDetailsDialog = ({
                       className="flex justify-between items-center p-3 bg-secondary border border-border rounded-lg"
                     >
                       <div>
-                        <p className="font-semibold text-emerald-300">
+                        <p className="font-semibold text-success">
                           {Money.from(p.amount).toString()}
                         </p>
                         <p className="text-sm text-muted-foreground">
@@ -272,7 +272,7 @@ export const PurchaseInvoiceDetailsDialog = ({
                         <button
                           type="button"
                           onClick={() => onPreviewImage(p.receiptImage!)}
-                          className="px-3 py-1.5 text-xs rounded-lg border border-sky-400/50 text-sky-400 hover:bg-sky-400/10 transition-colors"
+                          className="px-3 py-1.5 text-xs rounded-lg border border-info/50 text-info hover:bg-info-soft transition-colors"
                         >
                           {strings.salesInvoices.viewReceiptButton}
                         </button>
@@ -286,7 +286,7 @@ export const PurchaseInvoiceDetailsDialog = ({
               <span className="text-lg font-bold text-foreground">
                 {strings.purchases.totalColon}
               </span>
-              <span className="text-xl font-bold text-sky-400">
+              <span className="text-xl font-bold text-info">
                 {Money.from(invoice.total).toString()}
               </span>
             </div>

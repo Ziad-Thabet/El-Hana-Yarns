@@ -397,14 +397,14 @@ export const CheckoutDialog = ({
                     <div className="bg-secondary p-3 rounded-[var(--radius-lg)] space-y-2">
                       <div className="flex justify-between text-sm">
                         <span>{strings.sales.totalPaidLabel}</span>
-                        <span className="font-semibold text-green-600">
+                        <span className="font-semibold text-success">
                           {Money.from(totalPaid).toString()}
                         </span>
                       </div>
                       {changeDue > 0 ? (
                         <div className="flex justify-between text-sm">
                           <span>{strings.sales.changeDueLabel}</span>
-                          <span className="font-semibold text-blue-600">
+                          <span className="font-semibold text-info">
                             {Money.from(changeDue).toString()}
                           </span>
                         </div>
@@ -412,14 +412,14 @@ export const CheckoutDialog = ({
                         <div className="flex justify-between text-sm">
                           <span>{strings.sales.remainingAmountLabel}</span>
                           <span
-                            className={`font-semibold ${remainingDebt > 0 ? "text-red-600" : "text-green-600"}`}
+                            className={`font-semibold ${remainingDebt > 0 ? "text-destructive" : "text-success"}`}
                           >
                             {Money.from(remainingDebt).toString()}
                           </span>
                         </div>
                       )}
                       {needsCustomerInfo && (
-                        <p className="text-sm text-red-600 font-semibold pt-1">
+                        <p className="text-sm text-destructive font-semibold pt-1">
                           {strings.sales.needsCustomerInfoWarning}
                         </p>
                       )}
@@ -591,7 +591,7 @@ export const CheckoutDialog = ({
                         <p className="text-[11px] text-muted-foreground">
                           {strings.sales.successfulOrdersLabel}
                         </p>
-                        <p className="text-sm font-medium text-emerald-600">
+                        <p className="text-sm font-medium text-success">
                           {trustData.successfulOrders}
                         </p>
                       </div>
@@ -599,7 +599,7 @@ export const CheckoutDialog = ({
                         <p className="text-[11px] text-muted-foreground">
                           {strings.sales.cancelledNotReceivedLabel}
                         </p>
-                        <p className="text-sm font-medium text-rose-500">
+                        <p className="text-sm font-medium text-destructive">
                           {trustData.cancelledOrders} /{" "}
                           {trustData.notReceivedOrders}
                         </p>
@@ -851,7 +851,7 @@ export const CheckoutDialog = ({
             {saleMode === "online" && onSaveAsPreparing && (
               <Button
                 variant="outline"
-                className="flex-1 border-amber-500/40 text-amber-600 hover:bg-amber-500/10"
+                className="flex-1 border-warning/40 text-warning hover:bg-warning-soft"
                 onClick={onSaveAsPreparing}
                 disabled={isProcessing || !onlineValid}
               >

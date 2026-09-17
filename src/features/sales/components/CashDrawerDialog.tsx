@@ -150,7 +150,7 @@ export function CashDrawerDialog({
               <span
                 className={cn(
                   "text-xs font-semibold tabular-nums",
-                  net < 0 ? "text-destructive" : "text-emerald-500",
+                  net < 0 ? "text-destructive" : "text-success",
                 )}
               >
                 {strings.cashDrawer.net} {Money.from(net).toString()}
@@ -171,7 +171,7 @@ export function CashDrawerDialog({
                   <span
                     className={cn(
                       "shrink-0 text-sm font-semibold tabular-nums",
-                      m.direction === "out" ? "text-destructive" : "text-emerald-500",
+                      m.direction === "out" ? "text-destructive" : "text-success",
                     )}
                   >
                     {m.direction === "out" ? "−" : "+"}

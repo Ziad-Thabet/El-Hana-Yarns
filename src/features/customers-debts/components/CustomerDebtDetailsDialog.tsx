@@ -240,7 +240,7 @@ export function CustomerDebtDetailsDialog({
                 <div key={item.label}>
                   <Label className="text-muted-foreground">{item.label}</Label>
                   <p
-                    className={`font-semibold ${item.red ? "text-rose-400" : "text-foreground"}`}
+                    className={`font-semibold ${item.red ? "text-destructive" : "text-foreground"}`}
                   >
                     {item.value}
                   </p>
@@ -359,11 +359,11 @@ export function CustomerDebtDetailsDialog({
                           {Money.from(debt.totalAmount).toString()}
                         </span>
                       </p>
-                      <p className="text-sm text-green-600">
+                      <p className="text-sm text-success">
                         {strings.debts.paidColon}{" "}
                         {Money.from(debt.paidAmount).toString()}
                       </p>
-                      <p className="text-sm text-rose-400 font-semibold">
+                      <p className="text-sm text-destructive font-semibold">
                         {strings.debts.remainingColon}{" "}
                         {Money.from(debt.remainingAmount).toString()}
                       </p>
@@ -376,7 +376,7 @@ export function CustomerDebtDetailsDialog({
                           key={p.id}
                           className="flex justify-between text-xs bg-secondary border border-border rounded p-2"
                         >
-                          <span className="font-semibold text-emerald-300">
+                          <span className="font-semibold text-success">
                             {Money.from(p.amount).toString()}
                           </span>
                           <span className="text-muted-foreground">
