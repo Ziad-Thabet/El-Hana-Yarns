@@ -500,7 +500,7 @@ export const CheckoutDialog = ({
                                 placeholder={
                                   strings.sales.searchOrTypeNamePlaceholder
                                 }
-                                className="w-full h-9 px-3 text-sm bg-transparent border-b border-border outline-none"
+                                className="w-full h-11 px-3 text-base bg-transparent border-b border-border outline-none"
                               />
                               <CommandList>
                                 <CommandEmpty className="p-3 text-xs text-muted-foreground text-center">

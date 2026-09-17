@@ -158,6 +158,31 @@
   display: none;
 }
 @layer components {
+  /**
+   * A control that appears when its row is hovered — on a device that can
+   * hover.
+   *
+   * The shop runs on a touchscreen till, where there is no hover at all, so
+   * `opacity-0 group-hover:opacity-100` does not mean "reveal on hover", it
+   * means "invisible, permanently". Printing a receipt and deleting an expense
+   * were both behind it. This keeps the quiet look on a machine with a mouse
+   * and shows the control everywhere else.
+   */
+  .reveal-on-hover {
+    opacity: 1;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .reveal-on-hover {
+      opacity: 0;
+      transition: opacity 150ms ease;
+    }
+    .group:hover .reveal-on-hover,
+    .reveal-on-hover:focus-visible,
+    .reveal-on-hover:focus-within {
+      opacity: 1;
+    }
+  }
+
   .invoice-preview,
   .invoice-preview * {
     color: hsl(0 0% 9%) !important;

@@ -256,7 +256,7 @@ const CategoryManagement = ({
                   </div>
                 </div>
                 {isAdmin && (
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                  <div className="flex gap-1 flex-shrink-0 reveal-on-hover">
                     <Button
                       size="sm"
                       variant="ghost"

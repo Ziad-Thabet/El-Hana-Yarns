@@ -39,14 +39,14 @@ export function DateFilterBar({
             type="date"
             value={customFrom}
             onChange={(e) => onCustomFrom(e.target.value)}
-            className="h-8 w-36 text-xs"
+            className="h-11 w-40 text-sm"
           />
           <span className="text-muted-foreground text-xs">—</span>
           <Input
             type="date"
             value={customTo}
             onChange={(e) => onCustomTo(e.target.value)}
-            className="h-8 w-36 text-xs"
+            className="h-11 w-40 text-sm"
           />
         </div>
       )}
